@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+env.bak/
+
+# Visual Studio Code
+.vscode/
+.settings/
+*.code-workspace
+*.vsix
