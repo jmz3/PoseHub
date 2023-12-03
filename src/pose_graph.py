@@ -19,21 +19,29 @@ class PoseGraph:
             object_id: list[str] of all the object ids
         """
         self.nodes = []
-        self.edges = []
+        self.edges = dict()
         self.sensor_id = None
         self.object_id = None
 
     def add_node(self, node_id):
         self.nodes.append(node_id)
 
-    def add_edge(self, edge_id):
-        self.edges.append(edge_id)
+    def add_edge(self, parent_id, child_id, pose):
+        self.edges.append(parent_id, child_id, pose)
 
-    def add_sensor(self, sensor_id):
+    def add_sensor(self, sensor_id, poses):
+        """
+        Add a sensor as a node in the graph, and add the corresponding edge between the sensor and the objects in the graph
+        """
         self.sensor_id.append(sensor_id)
+
         self.add_node(sensor_id)
 
+        for pose in poses:
+            self.add_edge()
+
     def add_object(self, object_id):
+        self.object_id.append(object_id)
         self.add_node(object_id)
 
 
