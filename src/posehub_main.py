@@ -17,7 +17,7 @@ def send_poses(ip: str, port: str, msg):
     """
     pass
 
-
+    
 def main(args):
     """
     Main function
@@ -42,8 +42,8 @@ if __name__ == "__main__":
     parser.add_argument("--sub_ip", default="192.168.1.23", type=str, help="subscriber ip address")
     parser.add_argument("--sub_port", default="5588", type=str, help="port number for subscriber")
     parser.add_argument("--pub_port", default="5589", type=str, help="port number for publisher")
-    parser.add_argument("--sub_topic", default="topic1", type=str, help="subscriber topics")
-    parser.add_argument("--pub_topic", default="topic2", type=str, help="publisher topic")
+    parser.add_argument("--sub_topic", default=[b"Tool 1", b"Tool 2", b"Tool 3"], type=str, help="subscriber topics")
+    parser.add_argument("--pub_topic", default=[b"topic2",b"topic3",b"topic4"], type=str, help="publisher topic")
     args = parser.parse_args()
     
     main(args)

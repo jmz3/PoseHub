@@ -11,7 +11,9 @@ class ZMQManager:
         self.sub_topic = sub_topic
         self.pub_topic = pub_topic
         self.connected = False
-
+        self.pub_messages = {topic: f"Hello from {topic}" for topic in self.pub_topic}
+        self.sub_poses = {}
+        
     def initialize_publisher(self):
         context = zmq.Context()
         publisher = context.socket(zmq.PUB)
@@ -35,16 +37,23 @@ class ZMQManager:
         return context, subscriber
 
     @staticmethod
-    def process_message(message):
-        return f"Processed {message}"
+    def process_message(topic, message):
+        return topic + f" {message}"
 
+    def update_SubPoses(self, topic, msg):
+        self.sub_poses[topic] = msg
+    
+    def update_PubMsgs(self, topic, msg):
+        self.pub_messages[topic] = msg
+        
     def subscriber_thread(self):
         sub_context, sub_socket = self.initialize_subscriber()
         while True:
             if self.connected:
                 try:
                     topic, message = sub_socket.recv_multipart()
-                    print(f"Received: {message.decode('utf-8')}")
+                    self.update_SubPoses(topic.decode('utf-8'), message.decode('utf-8'))
+                    print(f"{topic.decode('utf-8')}: {message.decode('utf-8')}")
                 except zmq.Again:
                     print('No message received within our timeout period')
                 except KeyboardInterrupt:
@@ -59,9 +68,10 @@ class ZMQManager:
         pub_context, pub_socket = self.initialize_publisher()
         while True:
             if self.connected:
-                processed_message = self.process_message(time.time())
-                pub_socket.send_multipart([self.pub_topic, processed_message.encode('utf-8')])
-
+                for topic in self.pub_topic:
+                    # message = self.process_message(f'{topic}', time.time())
+                    message = self.process_message(self.pub_messages[topic])
+                    pub_socket.send_multipart([topic, message.encode('utf-8')])
             else:
                 print("Publisher thread interrupted, cleaning up...")
                 pub_socket.close()
