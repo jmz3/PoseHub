@@ -15,13 +15,15 @@ class PoseGraph:
 
         Members:
             nodes: list, all the nodes in the graph, each node is a sensor or an object
+                         nodes = [[property, id_0], [property, id_1], [property, id_2], ...]
+                         e.g. nodes = [[sensor, "sensor_id"], [obejct, "object_id"], ["object", "object_id"]]
             edges: dict, all the edges in the graph, each edge is a transformation between a sensor and an object
                          edges[parent_id] = [child_id, transformation, isActive]
             sensor_id: list[str] of all the sensor ids
             object_id: list[str] of all the object ids
 
         """
-        self.nodes = []
+        self.nodes = List[[str, str]]
         self.edges = dict([])
         self.sensor_id = []
         self.object_id = []
@@ -65,7 +67,7 @@ class PoseGraph:
 
         self.sensor_id.append(sensor_id)
 
-        self.add_node(sensor_id)
+        self.add_node("sensor_" + sensor_id)
 
         for pose in poses.items():
             # check if the object_id is already in the graph,
@@ -100,7 +102,7 @@ class PoseGraph:
         # TODO: need to consider the case when the object is not in the graph
         # TODO: need to consider the case when the object is no longer visible for the sensor
 
-    def get_transformation(self, parent_id: str, child_id: str):
+    def get_transform(self, parent_id: str, child_id: str):
         """
         Get the transformation between the parent node and the child node
         """
