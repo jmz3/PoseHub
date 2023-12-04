@@ -97,6 +97,29 @@ class PoseGraph:
             # update the transformation between the parent node and the child node
             pass
 
+        # TODO: need to consider the case when the object is not in the graph
+        # TODO: need to consider the case when the object is no longer visible for the sensor
+
+    def get_transformation(self, parent_id: str, child_id: str):
+        """
+        Get the transformation between the parent node and the child node
+        """
+        if parent_id not in self.sensor_id:
+            print("The parent node is not in the graph")
+            return
+
+        if child_id not in self.object_id:
+            print("The child node is not in the graph")
+            return
+
+        if child_id not in self.edges[parent_id]:
+            # The edge between the parent node and the child node is not in the graph
+            # TODO: graph search algorithm (DFS or BFS) to find a path between the parent node and the child node
+            # TODO: if the path is not found, return None
+            return
+
+        return self.edges[parent_id][child_id]
+
 
 class PoseDescriptor:
     def __init__(
