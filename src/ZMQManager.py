@@ -11,7 +11,7 @@ class ZMQManager:
         self.sub_topic = sub_topic
         self.pub_topic = pub_topic
         self.connected = False
-        self.pub_messages = {topic: f"Hello from {topic}" for topic in self.pub_topic}
+        self.pub_messages = {topic: f"{topic} Waiting for message..." for topic in self.pub_topic}
         self.sub_poses = {}
         
     def initialize_publisher(self):
@@ -94,3 +94,4 @@ class ZMQManager:
             print("Main thread interrupted, cleaning up...")
             sub_thread.join()
             pub_thread.join()
+    

@@ -3,6 +3,8 @@ from .comm import *
 from typing import Type, Dict, List, Optional
 from .ZMQManager import ZMQManager
 import argparse
+import threading
+import time
 
 def receive_poses(port: str, msg):
     """
@@ -17,6 +19,27 @@ def send_poses(ip: str, port: str, msg):
     """
     pass
 
+def initialize_ZMQManager(sub_ip, sub_port, pub_port, sub_topic, pub_topic):
+    """
+    initialize a ZMQManager
+    """
+    zmq_manager = ZMQManager(sub_ip, sub_port, pub_port, sub_topic, pub_topic)
+    zmq_manager.connected = True
+    pub_thread = threading.Thread(target=zmq_manager.publisher_thread)
+    sub_thread = threading.Thread(target=zmq_manager.subscriber_thread)
+    sub_thread.start()
+    pub_thread.start()
+    return zmq_manager, sub_thread, pub_thread
+
+def terminate_ZMQManager(zmq_manager, sub_thread, pub_thread):
+    """
+    terminate a ZMQManager
+    """
+    zmq_manager.connected = False
+    time.sleep(0.1)
+    print("Main thread interrupted, cleaning up...")
+    sub_thread.join()
+    pub_thread.join()
     
 def main(args):
     """
@@ -25,10 +48,17 @@ def main(args):
     # initialize the pose graph
     pose_graph = PoseGraph()
 
-    # initialize the communication
-    zmq_manager = ZMQManager(args.sub_ip, args.sub_port, args.pub_port, args.sub_topic, args.pub_topic)
-    zmq_manager.run()
+    # initialize communication managers
+    zmq_manager_1, sub_thread_1, pub_thread_1 = initialize_ZMQManager(args.sub_ip, args.sub_port, args.pub_port, args.sub_topic, args.pub_topic)
+    zmq_manager_2, sub_thread_2, pub_thread_2 = initialize_ZMQManager(args.sub_ip, args.sub_port, args.pub_port, args.sub_topic, args.pub_topic)
     
+    try:
+        while True:
+        # Running the main loop
+            pass
+    except KeyboardInterrupt:
+        terminate_ZMQManager(zmq_manager_1, sub_thread_1, pub_thread_1)
+        terminate_ZMQManager(zmq_manager_2, sub_thread_2, pub_thread_2)
     # initialize the message
     # msg = "hello world"
 
