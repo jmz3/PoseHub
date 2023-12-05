@@ -95,4 +95,13 @@ class ZMQManager:
             print("Main thread interrupted, cleaning up...")
             sub_thread.join()
             pub_thread.join()
-    
+            
+
+
+if __name__ == "__main__":
+    global posegraph = PoseGraph()
+
+    hl1_manager = ZMQManager("")
+    hl1_manager.run()
+    hl1_manager.msg
+
