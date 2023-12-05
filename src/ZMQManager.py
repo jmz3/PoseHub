@@ -11,8 +11,8 @@ class ZMQManager:
         self.sub_topic = sub_topic
         self.pub_topic = pub_topic
         self.connected = False
-        self.pub_messages = {topic: f"{topic} Waiting for message..." for topic in self.pub_topic}
-        self.sub_poses = {}
+        self.pub_messages = {topic.decode('utf-8'): f"{topic.decode('utf-8')} Waiting for message..." for topic in self.pub_topic}
+        self.sub_poses = {topic.decode('utf-8'): f"{topic.decode('utf-8')} Waiting for message..." for topic in self.sub_topic}
         
     def initialize_publisher(self):
         context = zmq.Context()
@@ -53,7 +53,7 @@ class ZMQManager:
                 try:
                     topic, message = sub_socket.recv_multipart()
                     self.update_SubPoses(topic.decode('utf-8'), message.decode('utf-8'))
-                    print(f"{topic.decode('utf-8')}: {message.decode('utf-8')}")
+                    # print(f"{topic.decode('utf-8')}: {message.decode('utf-8')}")
                 except zmq.Again:
                     print('No message received within our timeout period')
                 except KeyboardInterrupt:
@@ -70,7 +70,8 @@ class ZMQManager:
             if self.connected:
                 for topic in self.pub_topic:
                     # message = self.process_message(f'{topic}', time.time())
-                    message = self.process_message(self.pub_messages[topic])
+                    # message = self.process_message(f'{topic}', self.pub_messages[topic])
+                    message = self.pub_messages[topic.decode('utf-8')]
                     pub_socket.send_multipart([topic, message.encode('utf-8')])
             else:
                 print("Publisher thread interrupted, cleaning up...")
