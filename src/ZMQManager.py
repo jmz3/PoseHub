@@ -4,12 +4,13 @@ import sys
 import threading
 
 class ZMQManager:
-    def __init__(self, sub_ip, sub_port, pub_port, sub_topic, pub_topic):
+    def __init__(self, sub_ip, sub_port, pub_port, sub_topic, pub_topic, sensor_name):
         self.sub_ip = sub_ip
         self.sub_port = sub_port
         self.pub_port = pub_port
         self.sub_topic = sub_topic
         self.pub_topic = pub_topic
+        self.sensor_name = sensor_name
         self.connected = False
         self.pub_messages = {topic.decode('utf-8'): f"{topic.decode('utf-8')} Waiting for message..." for topic in self.pub_topic}
         self.sub_poses = {topic.decode('utf-8'): f"{topic.decode('utf-8')} Waiting for message..." for topic in self.sub_topic}
@@ -98,10 +99,10 @@ class ZMQManager:
             
 
 
-if __name__ == "__main__":
-    global posegraph = PoseGraph()
+# if __name__ == "__main__":
+#     global posegraph = PoseGraph()
 
-    hl1_manager = ZMQManager("")
-    hl1_manager.run()
-    hl1_manager.msg
+#     hl1_manager = ZMQManager("")
+#     hl1_manager.run()
+#     hl1_manager.msg
 
