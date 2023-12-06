@@ -1,5 +1,72 @@
+from pose_graph import PoseGraph
+
+
 class TransformSolver:
-    def __init__(self, model, device, config):
-        self.model = model
-        self.device = device
-        self.config = config
+    def __init__(self, nodes: list, edges: dict):
+        """
+        Initialize the TransformSolver class
+
+        Members:
+            graph: PoseGraph, the pose graph
+        """
+
+        self.nodes = nodes
+        self.edges = edges
+
+    def update_graph(self, nodes: list, edges: dict):
+        """
+        Update the graph
+        """
+        self.nodes = nodes
+        self.edges = edges
+
+    def solve(self, parent_id: str, child_id: str, method: str = "SET"):
+        """
+        Solve the transformation between the parent node and the child node
+        """
+        if method == "SET":
+            return self.SET(parent_id, child_id)
+        elif method == "DFS":
+            return self.DFS(parent_id, child_id)
+        elif method == "BFS":
+            return self.BFS(parent_id, child_id)
+        else:
+            raise ValueError("Invalid method, \nOnly SET, DFS, BFS are supported")
+
+    def DFS(self, parent_id: str, child_id: str):
+        """
+        Depth-first search algorithm to find a path between the parent node and the child node
+        """
+        visited = set()
+        path = []
+
+        def dfs_helper(node_id):
+            visited.add(node_id)
+            path.append(node_id)
+
+            if node_id == child_id:
+                return True
+
+            for neighbor_node in self.edges[node_id]:
+                if (
+                    neighbor_node[0] not in visited
+                ):  # neighbor_node[0] is the neighbor node id
+                    if dfs_helper(neighbor_node[0]):
+                        return True
+
+            path.pop()
+            return False
+
+        if parent_id not in self.nodes or child_id not in self.nodes:
+            return []
+
+        if dfs_helper(parent_id):
+            return path
+
+        return []
+
+    def BFS(self, parent_id: str, child_id: str):
+        """
+        Breadth-first search algorithm to find a path between the parent node and the child node
+        """
+        pass

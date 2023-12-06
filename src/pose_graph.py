@@ -1,4 +1,5 @@
 import numpy as np
+from transform_solver import TransformSolver
 from typing import Type, Dict, List, Optional, Tuple
 
 
@@ -27,10 +28,12 @@ class PoseGraph:
         self.edges = dict([])
         self.sensor_id = []
         self.object_id = []
+        self.transform_solver = TransformSolver(self.nodes, self.edges)
 
     def _add_node(self, node_id):
         """
         Add a node to the graph, private method
+        The nodes are represented as a list
         """
 
         self.nodes.append(node_id)
@@ -142,7 +145,9 @@ class PoseGraph:
         # Is it necessary to remove the edge between the sensor and the object?
         # Is a flag enough to indicate if the transformation is active?
 
-    def get_transform(self, parent_id: str, child_id: str):
+    def get_transform(
+        self, parent_id: str, child_id: str, solver_method: str = "SET"
+    ) -> np.ndarray:
         """
         Get the transformation between the parent node and the child node
         """
@@ -150,13 +155,13 @@ class PoseGraph:
             print(
                 "The parent node is not in the graph,\nPlease check the input or add the node to the graph"
             )
-            return
+            return None
 
         if child_id not in self.object_id:
             print(
                 "The child node is not in the graph,\nPlease check the input or add the node to the graph"
             )
-            return
+            return None
 
         if (
             child_id not in self.edges[parent_id]
@@ -165,18 +170,26 @@ class PoseGraph:
             # The edge between the parent node and the child node is not in the graph or is not active
             # TODO: graph search algorithm (DFS or BFS) to find a path between the parent node and the child node
             # TODO: if the path is not found, return None
-            return
+            self.transform_solver.update_graph(self.nodes, self.edges)
+            path = self.transform_solver.solve(
+                parent_id, child_id, method=solver_method
+            )
+
+            transform = np.eye(4, dtype=np.float32)
+
+            return transform
 
         elif (
             child_id in self.edges[parent_id]
-            and self.edges[parent_id][child_id][2] == True
+            and self.edges[parent_id][child_id][2]
+            == True  # checking the flag, not properly implemented
         ):
             transform = self.edges[parent_id][child_id][1]
 
         else:
             raise RuntimeError("Unexpected error when getting the transformation")
 
-        return transform
+        return None
 
 
 class PoseDescriptor:
