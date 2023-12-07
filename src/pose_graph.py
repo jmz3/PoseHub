@@ -19,7 +19,8 @@ class PoseGraph:
                          nodes = [[property, id_0], [property, id_1], [property, id_2], ...]
                          e.g. nodes = [[sensor, "sensor_id"], [obejct, "object_id"], ["object", "object_id"]]
             edges: dict, all the edges in the graph, each edge is a transformation between a sensor and an object
-                         edges[parent_id] = [child_id, transformation, isActive]
+                         e.g. edges = {parent_id: {child_id: [transformation, isActive]}, ...}
+                              edges[parent_id] = {child_id, [transformation, isActive]}
             sensor_id: list[str] of all the sensor ids
             object_id: list[str] of all the object ids
 
@@ -42,7 +43,7 @@ class PoseGraph:
         self,
         parent_id: str,
         child_id: str,
-        tranformation: np.ndarray,
+        transformation: np.ndarray,
         isActive: bool = False,
     ):
         """
@@ -58,17 +59,22 @@ class PoseGraph:
             tranformation: np.ndarray(np.float32, (4, 4)), transformation between the parent node and the child node
             isActive: bool, indicate if the transformation is active
         """
-        self.edges[parent_id] = [child_id, tranformation, isActive]
-        self.edges[child_id] = [parent_id, np.linalg.inv(tranformation), isActive]
+        if parent_id not in self.edges:
+            self.edges[parent_id] = {}
+        if child_id not in self.edges:
+            self.edges[child_id] = {}
 
-    def add_sensor(self, sensor_id: str, poses: Dict[str, Tuple[np.ndarray, bool]]):
+        self.edges[parent_id][child_id] = [transformation, isActive]
+        self.edges[child_id][parent_id] = [np.linalg.inv(transformation), isActive]
+
+    def add_sensor(self, sensor_id: str, poses: Dict[str, List[np.ndarray, bool]]):
         """
         Add a sensor as a node in the graph, and add the corresponding edge between the sensor and the objects in the graph
 
         Args:
         ----------
             sensor_id: str, id of the sensor
-            poses: Dict[str, Tuple[bool, np.ndarray(np.float32, (4, 4))]], a dictionary of poses,
+            poses: Dict[str, List[np.ndarray(np.float32, (4, 4)), bool]], a dictionary of poses,
                                          the key is the object id, the value is a tuple of the pose
                                          and a bool indicating if the pose is active,
                                          use tuple to make the pose immutable and for the efficiency of traversal
@@ -94,7 +100,7 @@ class PoseGraph:
                 self.add_object(pose[0])
 
             # add the edge between the sensor and the object
-            self.add_edge(sensor_id, pose[0], pose[1][0], pose[1][1])
+            self.add_edge(sensor_id, pose[0], transformation=pose[1][0], isActive=pose[1][1])
 
     def add_object(self, object_id):
         """
@@ -107,10 +113,13 @@ class PoseGraph:
         self.object_id.append(object_id)
         self.add_node(object_id)
 
-    def update_graph(self, sensor_id, poses: Dict[str, Tuple[np.ndarray, bool]]):
+    def update_graph(self, sensor_id, poses: Dict[str, List[np.ndarray, bool]]):
         """
         Update the transformation between the parent node and the child node
         """
+
+        object_ids = list(poses.keys())
+
         if sensor_id not in self.sensor_id:
             self.add_sensor(sensor_id, poses)
             print("The parent node is not in the graph, add it to the graph ... ")
@@ -118,28 +127,15 @@ class PoseGraph:
         else:
             # update the transformation between the parent node and the child node
             # Only the edges are updated, the nodes stay the same
-            object_transform = self.edges[
-                sensor_id
-            ]  # A list of [child_id, transformation, isActive]
 
-            for objects in self.edges[sensor_id]:
-                # check if the input poses contains the object
-                if objects[0] not in poses.keys():
-                    raise RuntimeWarning(
-                        "The input poses does not contain the object that is already in the graph"
-                    )
-                objects[1] = poses[objects[0]][0]  # update the transformation
-                objects[2] = poses[objects[0]][1]  # update the isActive flag
-
-            pass
-
-            # Consider the case when the object is not in the graph
-            for object_id in poses.keys():
-                if object_id not in self.object_id and poses[object_id][1] == True:
-                    # add the object to the graph
-                    self.add_object(object_id)
-                    # create the edge between the sensor and the object
-                    self.add_edge(sensor_id, object_id, poses[object_id][0])
+            for object in object_ids:
+                try:
+                    self.edges[sensor_id][object][0] = poses[object][0]
+                    self.edges[sensor_id][object][1] = poses[object][1]
+                except KeyError:
+                    # Tackle the case when the object is not in the graph
+                    #TODO: add the object to the graph
+                    print("The object is not in the graph, add it to the graph ... ")
 
         # TODO: need to consider the case when the object is no longer visible for the sensor
         # Is it necessary to remove the edge between the sensor and the object?
@@ -147,7 +143,7 @@ class PoseGraph:
 
     def get_transform(
         self, parent_id: str, child_id: str, solver_method: str = "SET"
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         """
         Get the transformation between the parent node and the child node
         """
@@ -163,10 +159,7 @@ class PoseGraph:
             )
             return None
 
-        if (
-            child_id not in self.edges[parent_id]
-            or self.edges[parent_id][child_id][2] == False
-        ):
+        if child_id not in self.edges.get(parent_id, {}) or self.edges[parent_id][child_id][2] == False:
             # The edge between the parent node and the child node is not in the graph or is not active
             # TODO: graph search algorithm (DFS or BFS) to find a path between the parent node and the child node
             # TODO: if the path is not found, return None
@@ -175,15 +168,17 @@ class PoseGraph:
                 parent_id, child_id, method=solver_method
             )
 
+            if len(path) == 0:
+                print("No path is found between the parent node and the child node")
+                return None
+
+            # return the transformation based on the path
+
             transform = np.eye(4, dtype=np.float32)
 
             return transform
 
-        elif (
-            child_id in self.edges[parent_id]
-            and self.edges[parent_id][child_id][2]
-            == True  # checking the flag, not properly implemented
-        ):
+        elif child_id in self.edges[parent_id] and self.edges[parent_id][child_id][2] == True  # checking the flag, not properly implemented
             transform = self.edges[parent_id][child_id][1]
 
         else:
@@ -191,28 +186,6 @@ class PoseGraph:
 
         return None
 
-
-class PoseDescriptor:
-    def __init__(
-        self,
-        sensor_id: str,
-        object_id: str,
-        timestamp: float,
-        pose: np.ndarray,
-    ):
-        """
-        Initialize the PoseDescriptor class
-
-        Members:
-            sensor_id: str, id of the sensor
-            timestamp: float, timestamp of the pose
-            pose: np.ndarray(np.float32, (4, 4)), pose of the object in the sensor frame
-        """
-
-        self.sensor_id = sensor_id
-        self.object_id = object_id
-        self.timestamp = timestamp
-        self.pose = pose
 
 
 if __name__ == "__main__":
