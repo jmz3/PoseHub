@@ -74,23 +74,28 @@ class TransformSolver:
         visited = set()
         path = []
 
-        queue = [parent_id]
+        queue = [(parent_id, [parent_id])]  # (node_id, path)
         visited.add(parent_id)
 
-        # print("BFS", self.edges[parent_id])
-
         while queue:
-            node_id = queue.pop(0)
-            path.append(node_id)
+            node_id, path = queue.pop(0)
+            print("Node id", node_id)
+            print("Path", path)
 
             if node_id == child_id:
                 return path
 
+            if node_id not in visited:
+                visited.add(node_id)
+                path.append(node_id)
+
+            # print("BFS", self.edges[node_id])
             for neighbor_node in self.edges[node_id].keys():
-                # print("BFS", neighbor_node)
+                print("The child node is", neighbor_node)
                 # print("BFS", self.edges[node_id].keys())
+
                 if neighbor_node not in visited:
-                    queue.append(neighbor_node)
+                    queue.append((neighbor_node, path + [neighbor_node]))
                     visited.add(neighbor_node)
 
         return []
