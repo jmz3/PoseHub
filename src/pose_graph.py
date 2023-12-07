@@ -79,7 +79,9 @@ class PoseGraph:
                                          and a bool indicating if the pose is active,
                                          use tuple to make the pose immutable and for the efficiency of traversal
         """
-
+        sensor_id = (
+            "sensor_" + sensor_id
+        )  # add a prefix to the sensor id to distinguish it from the object id
         # check if the sensor_id is already in the graph
         if sensor_id in self.sensor_id:
             print(
@@ -100,12 +102,17 @@ class PoseGraph:
                 self.add_object(pose[0])
 
             # add the edge between the sensor and the object
-            self.add_edge(sensor_id, pose[0], transformation=pose[1][0], isActive=pose[1][1])
+            self.add_edge(
+                sensor_id, pose[0], transformation=pose[1][0], isActive=pose[1][1]
+            )
 
     def add_object(self, object_id):
         """
         Add an object as a node in the graph
         """
+        object_id = (
+            "object_" + object_id
+        )  # add a prefix to the object id to distinguish it from the sensor id
         if object_id in self.object_id:
             print("The object" + object_id + " is already in the graph")
             return
@@ -134,7 +141,7 @@ class PoseGraph:
                     self.edges[sensor_id][object][1] = poses[object][1]
                 except KeyError:
                     # Tackle the case when the object is not in the graph
-                    #TODO: add the object to the graph
+                    # TODO: add the object to the graph
                     print("The object is not in the graph, add it to the graph ... ")
 
         # TODO: need to consider the case when the object is no longer visible for the sensor
@@ -159,11 +166,18 @@ class PoseGraph:
             )
             return None
 
-        if child_id not in self.edges.get(parent_id, {}) or self.edges[parent_id][child_id][2] == False:
+        if (
+            child_id not in self.edges.get(parent_id, {})
+            or self.edges[parent_id][child_id][2] == False
+        ):
             # The edge between the parent node and the child node is not in the graph or is not active
+            # Need to find a path between the parent node and the child node
             # TODO: graph search algorithm (DFS or BFS) to find a path between the parent node and the child node
             # TODO: if the path is not found, return None
-            self.transform_solver.update_graph(self.nodes, self.edges)
+
+            transform = np.eye(4, dtype=np.float32)
+
+            self.transform_solver.update(self.nodes, self.edges)
             path = self.transform_solver.solve(
                 parent_id, child_id, method=solver_method
             )
@@ -172,20 +186,35 @@ class PoseGraph:
                 print("No path is found between the parent node and the child node")
                 return None
 
-            # return the transformation based on the path
+            if len(path) == 1:
+                print(
+                    "The parent node and the child node are directly connected, please check the input"
+                )
 
-            transform = np.eye(4, dtype=np.float32)
+            else:
+                for idx in range(len(path) - 1):
+                    # check if the node is a sensor, if it is, the transformation is from the sensor to the object, otherwise, the transformation is from the object to the sensor
+                    transform = (
+                        transform @ self.edges[path[idx]][path[idx + 1]][0]
+                        if path[idx][0:6] == "sensor"
+                        else transform @ self.edges[path[idx + 1]][path[idx]][0]
+                    )
 
+                # return the transformation based on the path
+
+                return transform
+
+        elif (
+            child_id in self.edges.get(parent_id, {})
+            and self.edges[parent_id][child_id][1] == True
+        ):  # checking the flag, not properly implemented
+            transform = self.edges[parent_id][child_id][0]
             return transform
-
-        elif child_id in self.edges[parent_id] and self.edges[parent_id][child_id][2] == True  # checking the flag, not properly implemented
-            transform = self.edges[parent_id][child_id][1]
 
         else:
             raise RuntimeError("Unexpected error when getting the transformation")
 
         return None
-
 
 
 if __name__ == "__main__":

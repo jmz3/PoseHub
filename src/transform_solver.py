@@ -13,9 +13,9 @@ class TransformSolver:
         self.nodes = nodes
         self.edges = edges
 
-    def update_graph(self, nodes: list, edges: dict):
+    def update(self, nodes: list, edges: dict):
         """
-        Update the graph
+        Update the graph for the node and edge information
         """
         self.nodes = nodes
         self.edges = edges
@@ -69,4 +69,31 @@ class TransformSolver:
         """
         Breadth-first search algorithm to find a path between the parent node and the child node
         """
-        pass
+        visited = set()
+        path = []
+
+        queue = [parent_id]
+        visited.add(parent_id)
+
+        while queue:
+            node_id = queue.pop(0)
+            path.append(node_id)
+
+            if node_id == child_id:
+                return path
+
+            for neighbor_node in self.edges[node_id]:
+                if neighbor_node[0] not in visited:
+                    queue.append(neighbor_node[0])
+                    visited.add(neighbor_node[0])
+
+        return []
+
+    def SET(self, parent_id: str, child_id: str):
+        """
+        SET algorithm to find a path between the parent node and the child node
+        """
+        visited = set()
+        path = []
+
+        # TODO: implement the SET algorithm to find a path between the parent node and the child node
