@@ -8,3 +8,7 @@ Potential future work: borrow the idea of [networkx](https://networkx.org/) or d
 
 ## Threading and Locking
 The communication objects are running in different threads. They are created and started in the main thread. The main thread is responsible for creating and starting the communication objects. The communication objects are responsible for receiving data from the sensors and updating the `PoseGraph` object. The `PoseGraph` object is declared in the main thread so that it can be accessed by all the communication objects. The `PoseGraph` object is locked when it is being updated by the communication objects. The `PoseGraph` object is unlocked when it is being accessed by the main thread.
+
+## Contributors
+* [Jiaming Zhang](https://github.com/jmz3)
+* [Hongchao Shu](https://github.com/Soooooda69)

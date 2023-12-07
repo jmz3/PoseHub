@@ -1,6 +1,3 @@
-from pose_graph import PoseGraph
-
-
 class TransformSolver:
     def __init__(self, nodes: list, edges: dict):
         """
@@ -19,6 +16,11 @@ class TransformSolver:
         """
         self.nodes = nodes
         self.edges = edges
+
+        for node in self.nodes:
+            self.edges[node] = {
+                s: o for s, o in self.edges[node].items() if o[1]
+            }  # filter out inactive edges, i.e. edges with isActive=False, o is the object value in the dict
 
     def solve(self, parent_id: str, child_id: str, method: str = "SET"):
         """
@@ -75,6 +77,8 @@ class TransformSolver:
         queue = [parent_id]
         visited.add(parent_id)
 
+        # print("BFS", self.edges[parent_id])
+
         while queue:
             node_id = queue.pop(0)
             path.append(node_id)
@@ -82,10 +86,12 @@ class TransformSolver:
             if node_id == child_id:
                 return path
 
-            for neighbor_node in self.edges[node_id]:
-                if neighbor_node[0] not in visited:
-                    queue.append(neighbor_node[0])
-                    visited.add(neighbor_node[0])
+            for neighbor_node in self.edges[node_id].keys():
+                # print("BFS", neighbor_node)
+                # print("BFS", self.edges[node_id].keys())
+                if neighbor_node not in visited:
+                    queue.append(neighbor_node)
+                    visited.add(neighbor_node)
 
         return []
 
