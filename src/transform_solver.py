@@ -39,6 +39,9 @@ class TransformSolver:
         """
         Depth-first search algorithm to find a path between the parent node and the child node
         """
+
+        # TODO: implement the DFS algorithm to find a path between the parent node and the child node,
+        # The current implementation is not correct
         visited = set()
         path = []
 
@@ -67,7 +70,7 @@ class TransformSolver:
 
         return []
 
-    def BFS(self, parent_id: str, child_id: str):
+    def BFS(self, parent_id: str, child_id: str) -> list:
         """
         Breadth-first search algorithm to find a path between the parent node and the child node
         """
@@ -100,12 +103,38 @@ class TransformSolver:
 
         return []
 
-    def SET(self, parent_id: str, child_id: str):
+    def SET(self, parent_id: str, child_id: str) -> list:
         """
         SET algorithm to find a path between the parent node and the child node
         """
-        visited = set()
-        path = []
 
-        # TODO: implement the SET algorithm to find a path between the parent node and the child node
+        path = [parent_id]
+
+        parent_visibles = set(self.edges[parent_id].keys())
+
+        # find all the sensors that can see the child node
+        for sensor in self.edges[child_id].keys():
+            extra_visibles = set(
+                self.edges[sensor].keys()
+            )  # find all objects that can be seen by the sensor
+
+            # find the intersection of the parent_visibles and the extra_visibles
+            shared_visibles = parent_visibles.intersection(
+                extra_visibles
+            )  # if not empty
+
+            if shared_visibles is not None:
+                for visible_object in shared_visibles:
+                    if (
+                        self.edges[sensor][visible_object][1]
+                        and self.edges[parent_id][visible_object][1]
+                    ):
+                        path.append(visible_object)
+                        path.append(sensor)
+                        path.append(child_id)
+                        return path
+
+        print("No path found, please try other methods")
+        return []
+
         pass
