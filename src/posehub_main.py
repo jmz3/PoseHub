@@ -1,4 +1,4 @@
-from pose_graph import PoseGraph
+# from pose_graph import PoseGraph
 from comm import *
 from typing import Type, Dict, List, Optional
 from ZMQManager import ZMQManager
@@ -7,7 +7,7 @@ import threading
 import time
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
-
+        
 def receive_poses(args, zmq_manager):
     """
     Receive poses from the sensors
@@ -19,13 +19,18 @@ def receive_poses(args, zmq_manager):
         topic = topic.decode('utf-8')
         if len(received_dict[topic].split(',')) < 7:
             # means no pose received
-            return "waiting for poses"
+            return "waiting for sub poses"
         else:
             pose = np.array([float(x) for x in received_dict[topic].split(',')])
+            # if loseTrack(pose):
+            #     pose[7] = 0
+            # else:
+            #     pose[7] = 1
+            print(pose)
             pose_mtx[:3,:3] = Rot.from_quat(pose[3:7]).as_matrix()
             pose_mtx[:3, 3] = np.array([pose[0], pose[1], -pose[2]])
             topic = zmq_manager.sensor_name+'_'+topic
-            return [topic, pose_mtx, pose[7] == 1]
+            return [topic, pose_mtx, pose[7]==1]
 
 def send_poses(ip: str, port: str, msg):
     """
@@ -59,6 +64,8 @@ def main(args):
     """
     Main function
     """
+    global memoryBuffer
+    memoryBuffer = []
     # initialize the pose graph
     # pose_graph = PoseGraph()
 
@@ -91,7 +98,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Python script for running the AR tool tracking',
                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--sub_ip", default="192.168.1.23", type=str, help="subscriber ip address")#10.203.183.32
+    parser.add_argument("--sub_ip", default="192.168.1.35", type=str, help="subscriber ip address")#10.203.207.38 #local 10.203.192.59
     parser.add_argument("--sub_port", default="5588", type=str, help="port number for subscriber")
     parser.add_argument("--pub_port", default="5589", type=str, help="port number for publisher")
     parser.add_argument("--sub_topic", default=[b"tool_1", b"tool_2", b"tool_3"], type=str, help="subscriber topics")

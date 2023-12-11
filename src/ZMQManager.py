@@ -2,7 +2,7 @@ import zmq
 import time
 import sys
 import threading
-
+from collections import defaultdict
 
 class ZMQManager:
     def __init__(self, sub_ip, sub_port, pub_port, sub_topic, pub_topic, sensor_name):
@@ -13,10 +13,8 @@ class ZMQManager:
         self.pub_topic = pub_topic
         self.sensor_name = sensor_name
         self.connected = False
-        self.pub_messages = {
-            topic: f"{topic} Waiting for message..." for topic in self.pub_topic
-        }
-        self.sub_poses = {}
+        self.pub_messages = {topic.decode('utf-8'): f"{topic.decode('utf-8')} Waiting for message..." for topic in self.pub_topic}
+        self.sub_poses = {topic.decode('utf-8'): f"{topic.decode('utf-8')} Waiting for message..." for topic in self.sub_topic}
 
     def initialize_publisher(self):
         context = zmq.Context()
@@ -41,9 +39,11 @@ class ZMQManager:
         return context, subscriber
 
     @staticmethod
-    def process_message(topic, message):
-        return topic + f" {message}"
-
+    # def process_message(topic, message):
+    #     return topic + f" {message}"
+    def process_message(message):
+        return f" {message}"
+    
     def update_SubPoses(self, topic, msg):
         self.sub_poses[topic] = msg
 
@@ -57,7 +57,7 @@ class ZMQManager:
                 try:
                     topic, message = sub_socket.recv_multipart()
                     self.update_SubPoses(topic.decode("utf-8"), message.decode("utf-8"))
-                    print(f"{topic.decode('utf-8')}: {message.decode('utf-8')}")
+                    # print(f"{topic.decode('utf-8')}: {message.decode('utf-8')}")
                 except zmq.Again:
                     print("No message received within our timeout period")
                 except KeyboardInterrupt:
@@ -74,7 +74,7 @@ class ZMQManager:
             if self.connected:
                 for topic in self.pub_topic:
                     # message = self.process_message(f'{topic}', time.time())
-                    message = self.process_message(self.pub_messages[topic])
+                    message = self.process_message(self.pub_messages[topic.decode('utf-8')])
                     pub_socket.send_multipart([topic, message.encode("utf-8")])
             else:
                 print("Publisher thread interrupted, cleaning up...")
