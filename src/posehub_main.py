@@ -1,4 +1,4 @@
-from pose_graph import PoseGraph
+# from pose_graph import PoseGraph
 from comm import *
 from typing import Type, Dict, List, Optional
 from comm.ZMQManager import ZMQManager
@@ -103,6 +103,8 @@ def main(args):
     """
     Main function
     """
+    global memoryBuffer
+    memoryBuffer = []
     # initialize the pose graph
     # pose_graph = PoseGraph()
 
