@@ -82,8 +82,8 @@ class TransformSolver:
 
         while queue:
             node_id, path = queue.pop(0)
-            print("Node id", node_id)
-            print("Path", path)
+            # print("Node id", node_id)
+            # print("Path", path)
 
             if node_id == child_id:
                 return path
@@ -94,7 +94,7 @@ class TransformSolver:
 
             # print("BFS", self.edges[node_id])
             for neighbor_node in self.edges[node_id].keys():
-                print("The child node is", neighbor_node)
+                # print("The child node is", neighbor_node)
                 # print("BFS", self.edges[node_id].keys())
 
                 if neighbor_node not in visited:
@@ -136,5 +136,3 @@ class TransformSolver:
 
         print("No path found, please try other methods")
         return []
-
-        pass

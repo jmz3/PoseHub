@@ -182,7 +182,6 @@ class PoseGraph:
         ):
             # The edge between the parent node and the child node is not in the graph or is not active
             # Need to find a path between the parent node and the child node
-            # TODO: graph search algorithm (DFS or BFS) to find a path between the parent node and the child node
             # TODO: if the path is not found, return None
 
             transform = np.eye(4, dtype=np.float32)
@@ -205,12 +204,9 @@ class PoseGraph:
             else:
                 print("The path between the parent node and the child node is: ", path)
                 for idx in range(len(path) - 1):
-                    # check if the node is a sensor, if it is, the transformation is from the sensor to the object, otherwise, the transformation is from the object to the sensor
-                    transform = (
-                        transform @ self.edges[path[idx]][path[idx + 1]][0]
-                        if path[idx][0:6] == "sensor"
-                        else transform @ self.edges[path[idx + 1]][path[idx]][0]
-                    )
+                    # print(transform)
+
+                    transform = transform @ self.edges[path[idx]][path[idx + 1]][0]
 
                 # return the transformation based on the path
 
@@ -220,6 +216,11 @@ class PoseGraph:
             child_id in self.edges.get(parent_id, {})
             and self.edges[parent_id][child_id][1] == True
         ):  # checking the flag, not properly implemented
+            # The edge between the parent node and the child node is in the graph and is active
+            # directly return the transformation
+            print(
+                "The edge between the parent node and the child node is active.\nDirectly return the transformation"
+            )
             transform = self.edges[parent_id][child_id][0]
             return transform
 
