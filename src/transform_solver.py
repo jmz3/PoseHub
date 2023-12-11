@@ -13,6 +13,16 @@ class TransformSolver:
     def update(self, nodes: list, edges: dict):
         """
         Update the graph for the node and edge information
+
+        Args:
+        ----------
+            nodes: list, all the nodes in the graph, each node is a sensor or an object
+            edges: dict, described as an adjacency list, all the edges in the graph, each edge is a transformation between a sensor and an object
+                         e.g. edges = { parent_id: {child_id: [transformation, isActive]},
+                                        parent_id: {child_id: [transformation, isActive]},
+                                        parent_id: {child_id: [transformation, isActive]},
+                                        ...}
+
         """
         self.nodes = nodes
         self.edges = edges
@@ -38,6 +48,11 @@ class TransformSolver:
     def DFS(self, parent_id: str, child_id: str):
         """
         Depth-first search algorithm to find a path between the parent node and the child node
+
+        Args:
+        ----------
+            parent_id: str, id of the parent node
+            child_id: str, id of the child node
         """
 
         # TODO: implement the DFS algorithm to find a path between the parent node and the child node,
@@ -73,6 +88,11 @@ class TransformSolver:
     def BFS(self, parent_id: str, child_id: str) -> list:
         """
         Breadth-first search algorithm to find a path between the parent node and the child node
+
+        Args:
+        ----------
+            parent_id: str, id of the parent node
+            child_id: str, id of the child node
         """
         visited = set()
         path = []

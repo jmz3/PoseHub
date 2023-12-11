@@ -127,6 +127,15 @@ class PoseGraph:
     def update_graph(self, sensor_id, poses: Dict[str, Tuple[np.ndarray, bool]]):
         """
         Update the transformation between the parent node and the child node
+
+        Args:
+        ----------
+            sensor_id: str, id of the sensor
+            poses: Dict[str, List[np.ndarray(np.float32, (4, 4)), bool]], a dictionary of poses,
+                                         the key is the object id, the value is a tuple of the pose
+                                         and a bool indicating if the pose is active,
+                                         use tuple to make the pose immutable and for the efficiency of traversal
+
         """
 
         object_ids = list(poses.keys())
@@ -149,7 +158,11 @@ class PoseGraph:
                 except KeyError:
                     # Tackle the case when the object is not in the graph
                     # TODO: add the object to the graph
-                    print("The object is not in the graph, add it to the graph ... ")
+                    print(
+                        "The object",
+                        object_id,
+                        " is not in the graph, add it to the graph ... ",
+                    )
 
         # TODO: need to consider the case when the object is no longer visible for the sensor
         # Is it necessary to remove the edge between the sensor and the object?
@@ -160,6 +173,16 @@ class PoseGraph:
     ) -> Optional[np.ndarray]:
         """
         Get the transformation between the parent node and the child node
+
+        Args:
+        ----------
+            parent_id: str, id of the parent node
+            child_id: str, id of the child node
+            solver_method: str, method to solve the transformation between the parent node and the child node
+
+        Return:
+        ----------
+            transform: np.ndarray(np.float32, (4, 4)), transformation between the parent node and the child node
         """
         parent_id = "sensor_" + parent_id
         child_id = "object_" + child_id

@@ -1,7 +1,7 @@
 from pose_graph import PoseGraph
 from comm import *
 from typing import Type, Dict, List, Optional
-from .comm import ZMQManager
+from comm.ZMQManager import ZMQManager
 import argparse
 import threading
 import time
@@ -9,32 +9,66 @@ import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 
 
-def receive_poses(args, zmq_manager):
+def receive_poses(args: argparse.Namespace, zmq_manager: ZMQManager):
     """
     Receive poses from the sensors
-    Return: [topic name, transformation matrix, isActive], [str, np.ndarray(np.float32, (4, 4)), bool]
+
+    Args:
+    ----------
+        args: argparse.Namespace, arguments
+        zmq_manager: ZMQManager, the ZMQManager object
+
+    Return:
+    ----------
+        tool_info: dict, {topic name: [transformation matrix: np.ndarray(np.float32, (4, 4)), isActive: bool]}
     """
     received_dict = zmq_manager.sub_poses
     pose_mtx = np.identity(4)
+    tool_info = {}
     for topic in args.sub_topic:
         topic = topic.decode("utf-8")
-        if len(received_dict[topic].split(",")) < 7:
-            # means no pose received
-            print("waiting for poses")
-            return {}
+        if topic in received_dict:  # check if the topic is in the received_dict
+            if len(received_dict[topic].split(",")) < 7:
+                # means no pose received
+                print("waiting for poses")
+                return {}
+            else:
+                twist = np.array([float(x) for x in received_dict[topic].split(",")])
+                pose_mtx[:3, :3] = Rot.from_quat(twist[3:7]).as_matrix()
+                pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
+                tool_info[topic] = [
+                    pose_mtx,
+                    twist[7] == 1,
+                ]  # twist[7] == 1 means isActive?
+
         else:
-            pose = np.array([float(x) for x in received_dict[topic].split(",")])
-            pose_mtx[:3, :3] = Rot.from_quat(pose[3:7]).as_matrix()
-            pose_mtx[:3, 3] = np.array([pose[0], pose[1], -pose[2]])
-            topic = zmq_manager.sensor_name + "_" + topic
-            return {topic: [pose_mtx, pose[7] == 1]}  # pose[7] == 1 means isActive?
+            print("Subscribing to the topic: ", topic, " but no message received")
+            return {}
+    return tool_info
 
 
-def send_poses(ip: str, port: str, msg):
+def send_poses(topic, zmq_manager, transform_mtx: np.ndarray):
     """
     Send poses to the sensors
     """
-    pass
+
+    # decode the matrix into twist
+    # check the size of the matrix
+    if transform_mtx.shape != (4, 4):
+        print("The size of the transformation matrix is not 4x4")
+        return
+
+    pub_message_on_topic = ""
+    position = transform_mtx[:3, 3]
+    quaternion = Rot.from_matrix(transform_mtx[:3, :3]).as_quat()
+
+    # encode the transformation matrix into a string
+    # the string is in the order of [x, y, z, w, x, y, z, isActive], separated by commas
+    pub_message_on_topic += f"{position[0]},{position[1]},{-position[2]},"
+    pub_message_on_topic += f"{quaternion[0]},{quaternion[1]},{quaternion[2]},{quaternion[3]},"  # the quaternion is in the order of x,y,z,w
+    pub_message_on_topic += f"1"  # isActive since we are sending the calculated poses
+
+    zmq_manager.pub_messages[topic] = pub_message_on_topic
 
 
 def initialize_ZMQManager(

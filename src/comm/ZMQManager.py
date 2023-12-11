@@ -74,7 +74,8 @@ class ZMQManager:
             if self.connected:
                 for topic in self.pub_topic:
                     # message = self.process_message(f'{topic}', time.time())
-                    message = self.process_message(self.pub_messages[topic])
+                    # message = self.process_message(topic, self.pub_messages[topic])
+                    message = f"{self.pub_messages[topic]}"
                     pub_socket.send_multipart([topic, message.encode("utf-8")])
             else:
                 print("Publisher thread interrupted, cleaning up...")
@@ -106,4 +107,3 @@ class ZMQManager:
 #     hl1_manager = ZMQManager("")
 #     hl1_manager.run()
 #     hl1_manager.msg
-
