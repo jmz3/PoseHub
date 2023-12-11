@@ -1,6 +1,3 @@
-from pose_graph import PoseGraph
-
-
 class TransformSolver:
     def __init__(self, nodes: list, edges: dict):
         """
@@ -19,6 +16,11 @@ class TransformSolver:
         """
         self.nodes = nodes
         self.edges = edges
+
+        for node in self.nodes:
+            self.edges[node] = {
+                s: o for s, o in self.edges[node].items() if o[1]
+            }  # filter out inactive edges, i.e. edges with isActive=False, o is the object value in the dict
 
     def solve(self, parent_id: str, child_id: str, method: str = "SET"):
         """
@@ -72,20 +74,29 @@ class TransformSolver:
         visited = set()
         path = []
 
-        queue = [parent_id]
+        queue = [(parent_id, [parent_id])]  # (node_id, path)
         visited.add(parent_id)
 
         while queue:
-            node_id = queue.pop(0)
-            path.append(node_id)
+            node_id, path = queue.pop(0)
+            print("Node id", node_id)
+            print("Path", path)
 
             if node_id == child_id:
                 return path
 
-            for neighbor_node in self.edges[node_id]:
-                if neighbor_node[0] not in visited:
-                    queue.append(neighbor_node[0])
-                    visited.add(neighbor_node[0])
+            if node_id not in visited:
+                visited.add(node_id)
+                path.append(node_id)
+
+            # print("BFS", self.edges[node_id])
+            for neighbor_node in self.edges[node_id].keys():
+                print("The child node is", neighbor_node)
+                # print("BFS", self.edges[node_id].keys())
+
+                if neighbor_node not in visited:
+                    queue.append((neighbor_node, path + [neighbor_node]))
+                    visited.add(neighbor_node)
 
         return []
 
