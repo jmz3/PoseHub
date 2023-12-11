@@ -13,6 +13,16 @@ class TransformSolver:
     def update(self, nodes: list, edges: dict):
         """
         Update the graph for the node and edge information
+
+        Args:
+        ----------
+            nodes: list, all the nodes in the graph, each node is a sensor or an object
+            edges: dict, described as an adjacency list, all the edges in the graph, each edge is a transformation between a sensor and an object
+                         e.g. edges = { parent_id: {child_id: [transformation, isActive]},
+                                        parent_id: {child_id: [transformation, isActive]},
+                                        parent_id: {child_id: [transformation, isActive]},
+                                        ...}
+
         """
         self.nodes = nodes
         self.edges = edges
@@ -38,7 +48,15 @@ class TransformSolver:
     def DFS(self, parent_id: str, child_id: str):
         """
         Depth-first search algorithm to find a path between the parent node and the child node
+
+        Args:
+        ----------
+            parent_id: str, id of the parent node
+            child_id: str, id of the child node
         """
+
+        # TODO: implement the DFS algorithm to find a path between the parent node and the child node,
+        # The current implementation is not correct
         visited = set()
         path = []
 
@@ -67,9 +85,14 @@ class TransformSolver:
 
         return []
 
-    def BFS(self, parent_id: str, child_id: str):
+    def BFS(self, parent_id: str, child_id: str) -> list:
         """
         Breadth-first search algorithm to find a path between the parent node and the child node
+
+        Args:
+        ----------
+            parent_id: str, id of the parent node
+            child_id: str, id of the child node
         """
         visited = set()
         path = []
@@ -79,8 +102,8 @@ class TransformSolver:
 
         while queue:
             node_id, path = queue.pop(0)
-            print("Node id", node_id)
-            print("Path", path)
+            # print("Node id", node_id)
+            # print("Path", path)
 
             if node_id == child_id:
                 return path
@@ -91,7 +114,7 @@ class TransformSolver:
 
             # print("BFS", self.edges[node_id])
             for neighbor_node in self.edges[node_id].keys():
-                print("The child node is", neighbor_node)
+                # print("The child node is", neighbor_node)
                 # print("BFS", self.edges[node_id].keys())
 
                 if neighbor_node not in visited:
@@ -100,12 +123,36 @@ class TransformSolver:
 
         return []
 
-    def SET(self, parent_id: str, child_id: str):
+    def SET(self, parent_id: str, child_id: str) -> list:
         """
         SET algorithm to find a path between the parent node and the child node
         """
-        visited = set()
-        path = []
 
-        # TODO: implement the SET algorithm to find a path between the parent node and the child node
-        pass
+        path = [parent_id]
+
+        parent_visibles = set(self.edges[parent_id].keys())
+
+        # find all the sensors that can see the child node
+        for sensor in self.edges[child_id].keys():
+            extra_visibles = set(
+                self.edges[sensor].keys()
+            )  # find all objects that can be seen by the sensor
+
+            # find the intersection of the parent_visibles and the extra_visibles
+            shared_visibles = parent_visibles.intersection(
+                extra_visibles
+            )  # if not empty
+
+            if shared_visibles is not None:
+                for visible_object in shared_visibles:
+                    if (
+                        self.edges[sensor][visible_object][1]
+                        and self.edges[parent_id][visible_object][1]
+                    ):
+                        path.append(visible_object)
+                        path.append(sensor)
+                        path.append(child_id)
+                        return path
+
+        print("No path found, please try other methods")
+        return []
