@@ -2,7 +2,8 @@ import zmq
 import time
 import sys
 import threading
-
+import numpy as np 
+from scipy.spatial.transform import Rotation as Rot
 
 class ZMQManager:
     def __init__(self, sub_ip, sub_port, pub_port, sub_topic, pub_topic, sensor_name):
@@ -13,10 +14,14 @@ class ZMQManager:
         self.pub_topic = pub_topic
         self.sensor_name = sensor_name
         self.connected = False
+        self.pub_thread = None
+        self.sub_thread = None
         self.pub_messages = {
-            topic: f"{topic} Waiting for message..." for topic in self.pub_topic
+            topic: f"{topic} Waiting for pub message..." for topic in self.pub_topic
         }
-        self.sub_poses = {}
+        self.sub_poses = {
+            topic: f"{topic} Waiting for sub message..." for topic in self.pub_topic
+        }
 
     def initialize_publisher(self):
         context = zmq.Context()
@@ -36,13 +41,13 @@ class ZMQManager:
             self.sub_topic = self.sub_topic.encode()
 
         for t in self.sub_topic:
-            subscriber.setsockopt(zmq.SUBSCRIBE, t)
+            subscriber.setsockopt(zmq.SUBSCRIBE, t.encode('utf-8'))
 
         return context, subscriber
 
-    @staticmethod
-    def process_message(topic, message):
-        return topic + f" {message}"
+    # @staticmethod
+    # def process_message(topic, message):
+    #     return topic + f" {message}"
 
     def update_SubPoses(self, topic, msg):
         self.sub_poses[topic] = msg
@@ -56,7 +61,7 @@ class ZMQManager:
             if self.connected:
                 try:
                     topic, message = sub_socket.recv_multipart()
-                    self.update_SubPoses(topic.decode("utf-8"), message.decode("utf-8"))
+                    self.update_SubPoses(topic, message.decode("utf-8"))
                     print(f"{topic.decode('utf-8')}: {message.decode('utf-8')}")
                 except zmq.Again:
                     print("No message received within our timeout period")
@@ -76,29 +81,109 @@ class ZMQManager:
                     # message = self.process_message(f'{topic}', time.time())
                     # message = self.process_message(topic, self.pub_messages[topic])
                     message = f"{self.pub_messages[topic]}"
-                    pub_socket.send_multipart([topic, message.encode("utf-8")])
+                    pub_socket.send_multipart([topic.encode("utf-8"), message.encode("utf-8")])
             else:
                 print("Publisher thread interrupted, cleaning up...")
                 pub_socket.close()
                 pub_context.term()
                 break
 
-    def run(self):
+    def initialize(self):
+        """
+        initialize a ZMQManager
+        """
         self.connected = True
-        pub_thread = threading.Thread(target=self.publisher_thread)
-        sub_thread = threading.Thread(target=self.subscriber_thread)
-        sub_thread.start()
-        pub_thread.start()
+        self.pub_thread = threading.Thread(target=self.publisher_thread)
+        self.sub_thread = threading.Thread(target=self.subscriber_thread)
+        self.sub_thread.start()
+        self.pub_thread.start()
+        # return self, sub_thread, pub_thread
 
-        try:
-            while True:
-                pass
-        except KeyboardInterrupt:
-            self.connected = False
-            time.sleep(0.1)
-            print("Main thread interrupted, cleaning up...")
-            sub_thread.join()
-            pub_thread.join()
+    def terminate(self):
+        """
+        terminate a ZMQManager
+        """
+        self.connected = False
+        time.sleep(0.1)
+        print("Main thread interrupted, cleaning up...")
+        self.sub_thread.join()
+        self.pub_thread.join()
+
+    def receive_poses(self):
+        """
+        Receive poses from the sensors
+
+        Args:
+        ----------
+            args: argparse.Namespace, arguments
+            zmq_manager: ZMQManager, the ZMQManager object
+
+        Return:
+        ----------
+            tool_info: dict, {topic name: [transformation matrix: np.ndarray(np.float32, (4, 4)), isActive: bool]}
+        """
+        received_dict = self.sub_poses
+        pose_mtx = np.identity(4)
+        tool_info = {}
+        for topic in self.sub_topic:
+            # topic = topic.decode("utf-8")
+            if topic in received_dict:  # check if the topic is in the received_dict
+                if len(received_dict[topic].split(",")) < 7:
+                    # means no pose received
+                    print("waiting for poses")
+                    return {}
+                else:
+                    twist = np.array([float(x) for x in received_dict[topic].split(",")])
+                    pose_mtx[:3, :3] = Rot.from_quat(twist[3:7]).as_matrix()
+                    pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
+                    tool_info[topic] = [
+                        pose_mtx,
+                        twist[7] == 1,
+                    ]  # twist[7] == 1 means isActive?
+
+            else:
+                # print("Subscribing to the topic: ", topic, " but no message received")
+                return {}
+        return tool_info
+    
+    def send_poses(self, topic, transform_mtx: np.ndarray):
+        """
+        Send poses to the sensors
+        """
+
+        # decode the matrix into twist
+        # check the size of the matrix
+        if transform_mtx.shape != (4, 4):
+            print("The size of the transformation matrix is not 4x4")
+            return
+
+        pub_message_on_topic = ""
+        position = transform_mtx[:3, 3]
+        quaternion = Rot.from_matrix(transform_mtx[:3, :3]).as_quat()
+
+        # encode the transformation matrix into a string
+        # the string is in the order of [x, y, z, w, x, y, z, isActive], separated by commas
+        pub_message_on_topic += f"{position[0]},{position[1]},{-position[2]},"
+        pub_message_on_topic += f"{quaternion[0]},{quaternion[1]},{quaternion[2]},{quaternion[3]},"  # the quaternion is in the order of x,y,z,w
+        pub_message_on_topic += f"1"  # isActive since we are sending the calculated poses
+
+        self.pub_messages[topic] = pub_message_on_topic
+    # def run(self):
+    #     self.connected = True
+    #     pub_thread = threading.Thread(target=self.publisher_thread)
+    #     sub_thread = threading.Thread(target=self.subscriber_thread)
+    #     sub_thread.start()
+    #     pub_thread.start()
+
+    #     try:
+    #         while True:
+    #             pass
+    #     except KeyboardInterrupt:
+    #         self.connected = False
+    #         time.sleep(0.1)
+    #         print("Main thread interrupted, cleaning up...")
+    #         sub_thread.join()
+    #         pub_thread.join()
 
 
 # if __name__ == "__main__":
