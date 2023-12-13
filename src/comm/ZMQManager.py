@@ -4,6 +4,7 @@ import sys
 import threading
 import numpy as np 
 from scipy.spatial.transform import Rotation as Rot
+from collections import defaultdict
 
 class ZMQManager:
     def __init__(self, sub_ip, sub_port, pub_port, sub_topic, pub_topic, sensor_name):
@@ -22,6 +23,7 @@ class ZMQManager:
         self.sub_poses = {
             topic: f"{topic} Waiting for sub message..." for topic in self.pub_topic
         }
+        # self.sub_poses = defaultdict()
 
     def initialize_publisher(self):
         context = zmq.Context()
@@ -61,8 +63,8 @@ class ZMQManager:
             if self.connected:
                 try:
                     topic, message = sub_socket.recv_multipart()
-                    self.update_SubPoses(topic, message.decode("utf-8"))
-                    print(f"{topic.decode('utf-8')}: {message.decode('utf-8')}")
+                    self.update_SubPoses(topic.decode("utf-8"), message.decode("utf-8"))
+                    # print(f"{topic.decode('utf-8')}: {message.decode('utf-8')}")
                 except zmq.Again:
                     print("No message received within our timeout period")
                 except KeyboardInterrupt:
@@ -133,7 +135,9 @@ class ZMQManager:
                     print("waiting for poses")
                     return {}
                 else:
+                    
                     twist = np.array([float(x) for x in received_dict[topic].split(",")])
+                    print(twist)
                     pose_mtx[:3, :3] = Rot.from_quat(twist[3:7]).as_matrix()
                     pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
                     tool_info[topic] = [

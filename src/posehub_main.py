@@ -29,14 +29,19 @@ def main(args):
             # test receiving poses
             # print('tool 1: ', zmq_manager_1.sub_poses['tool_1'])
             poseinfo = zmq_manager_1.receive_poses()
-            print(poseinfo)
+            # if len(poseinfo) != 0:
+            #     print(poseinfo['tool_1'])
+            # poseinfo should be a dictionary with key as object name and value is [pose, isActive]
+            
+            # else:
+            #     print("no poseinfo received")
             # print('tool 2: ', zmq_manager_1.sub_poses['tool_2'])
             # print('tool 3: ', zmq_manager_1.sub_poses['tool_3'])
 
             # test sending messages
             zmq_manager_1.pub_messages["topic4"] = f"topic4 test message {i}"
-            zmq_manager_1.pub_messages["topic5"] = f"topic5 test message {i}"
-            zmq_manager_1.pub_messages["topic6"] = f"topic6 test message {i}"
+            # zmq_manager_1.pub_messages["topic5"] = f"topic5 test message {i}"
+            # zmq_manager_1.pub_messages["topic6"] = f"topic6 test message {i}"
             i += 1e-6
 
     except KeyboardInterrupt:
@@ -61,7 +66,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sub_topic",
-        default=["tool_1", "tool_2", "tool_3"],
+        default=["tool_1"],
         type=str,
         help="subscriber topics",
     )
