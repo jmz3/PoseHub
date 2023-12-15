@@ -1,12 +1,13 @@
 # from pose_graph import PoseGraph
-from comm import *
 from typing import Type, Dict, List, Optional
 from comm.ZMQManager import ZMQManager
+from pose_graph import PoseGraph
 import argparse
 import threading
 import time
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
+
 
 def main(args):
     """
@@ -15,38 +16,82 @@ def main(args):
     global memoryBuffer
     memoryBuffer = []
     # initialize the pose graph
-    # pose_graph = PoseGraph()
+    pose_graph = PoseGraph()
 
-    # # initialize communication managers
-    zmq_manager_1 = ZMQManager(args.sub_ip, args.sub_port, args.pub_port, args.sub_topic, args.pub_topic, args.sensor_name)
-    zmq_manager_1.initialize()
+    tool_1_id = "tool_1"
+    tool_2_id = "tool_2"
+    tool_3_id = "tool_3"
+
+    args_1 = argparse.Namespace(
+        sub_ip="192.168.1.23",
+        sub_port="5588",
+        pub_port="5589",
+        sub_topic=[tool_1_id, tool_2_id, tool_3_id],
+        pub_topic=[tool_1_id, tool_2_id, tool_3_id],
+        sensor_name="h1",
+    )  # args for h1 sensor
+
+    args_2 = argparse.Namespace(
+        sub_ip="192.168.1.23",
+        sub_port="5589",
+        pub_port="5580",
+        sub_topic=[tool_1_id, tool_2_id, tool_3_id],
+        pub_topic=[b"topic4", b"topic5", b"topic6"],
+        sensor_name="h2",
+    )  # args for h2 sensor
+
+    zmq_manager_1, sub_thread_1, pub_thread_1 = ZMQManager.initialize(
+        args_1.sub_ip,
+        args_1.sub_port,
+        args_1.pub_port,
+        args_1.sub_topic,
+        args_1.pub_topic,
+        args_1.sensor_name,
+    )
+    zmq_manager_2, sub_thread_2, pub_thread_2 = ZMQManager.initialize(
+        args_2.sub_ip,
+        args_2.sub_port,
+        args_2.pub_port,
+        args_2.sub_topic,
+        args_2.pub_topic,
+        args_2.sensor_name,
+    )
+
     # zmq_manager_2, sub_thread_2, pub_thread_2 = initialize_ZMQManager(args.sub_ip, args.sub_port, args.pub_port, args.sub_topic, args.pub_topic)
     i = 0
     try:
         while True:
             # Running the main loop
 
-            # test receiving poses
-            # print('tool 1: ', zmq_manager_1.sub_poses['tool_1'])
-            poseinfo = zmq_manager_1.receive_poses()
-            # if len(poseinfo) != 0:
-            #     print(poseinfo['tool_1'])
-            # poseinfo should be a dictionary with key as object name and value is [pose, isActive]
-            
-            # else:
-            #     print("no poseinfo received")
-            # print('tool 2: ', zmq_manager_1.sub_poses['tool_2'])
-            # print('tool 3: ', zmq_manager_1.sub_poses['tool_3'])
+            # receive messages
+            poseinfo_sensor1 = zmq_manager_1.receive_poses(args_1, zmq_manager_1)
+            if len(poseinfo_sensor1) != 0:
+                print("poseinfo: ", poseinfo_sensor1)
 
-            # test sending messages
-            zmq_manager_1.pub_messages["topic4"] = f"topic4 test message {i}"
-            # zmq_manager_1.pub_messages["topic5"] = f"topic5 test message {i}"
-            # zmq_manager_1.pub_messages["topic6"] = f"topic6 test message {i}"
+            else:
+                print("poseinfo_sensor1 is empty")
+
+            poseinfo_sensor2 = zmq_manager_2.receive_poses(args_2, zmq_manager_2)
+            if len(poseinfo_sensor2) != 0:
+                print("poseinfo: ", poseinfo_sensor2)
+
+            else:
+                print("poseinfo_sensor2 is empty")
+
+            # send messages
+            for topic in args_1.pub_topic:
+                # transfer the topic from bytes to string
+                pose = pose_graph.get_transform(
+                    "h1", topic.decode("utf-8"), solver_method="BFS"
+                )
+                zmq_manager_1.send_poses(topic, zmq_manager_1, pose)
+
             i += 1e-6
 
     except KeyboardInterrupt:
         # terminate_ZMQManager(zmq_manager_1, sub_thread_1, pub_thread_1)
         zmq_manager_1.terminate()
+        zmq_manager_2.terminate()
         # terminate_ZMQManager(zmq_manager_2, sub_thread_2, pub_thread_2)
 
 
@@ -80,4 +125,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args)
+    main()

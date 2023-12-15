@@ -2,9 +2,10 @@ import zmq
 import time
 import sys
 import threading
-import numpy as np 
+import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 from collections import defaultdict
+
 
 class ZMQManager:
     def __init__(self, sub_ip, sub_port, pub_port, sub_topic, pub_topic, sensor_name):
@@ -43,7 +44,7 @@ class ZMQManager:
             self.sub_topic = self.sub_topic.encode()
 
         for t in self.sub_topic:
-            subscriber.setsockopt(zmq.SUBSCRIBE, t.encode('utf-8'))
+            subscriber.setsockopt(zmq.SUBSCRIBE, t.encode("utf-8"))
 
         return context, subscriber
 
@@ -83,7 +84,9 @@ class ZMQManager:
                     # message = self.process_message(f'{topic}', time.time())
                     # message = self.process_message(topic, self.pub_messages[topic])
                     message = f"{self.pub_messages[topic]}"
-                    pub_socket.send_multipart([topic.encode("utf-8"), message.encode("utf-8")])
+                    pub_socket.send_multipart(
+                        [topic.encode("utf-8"), message.encode("utf-8")]
+                    )
             else:
                 print("Publisher thread interrupted, cleaning up...")
                 pub_socket.close()
@@ -135,9 +138,9 @@ class ZMQManager:
                     print("waiting for poses")
                     return {}
                 else:
-                    
-                    twist = np.array([float(x) for x in received_dict[topic].split(",")])
-                    print(twist)
+                    twist = np.array(
+                        [float(x) for x in received_dict[topic].split(",")]
+                    )
                     pose_mtx[:3, :3] = Rot.from_quat(twist[3:7]).as_matrix()
                     pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
                     tool_info[topic] = [
@@ -149,7 +152,7 @@ class ZMQManager:
                 # print("Subscribing to the topic: ", topic, " but no message received")
                 return {}
         return tool_info
-    
+
     def send_poses(self, topic, transform_mtx: np.ndarray):
         """
         Send poses to the sensors
@@ -169,9 +172,12 @@ class ZMQManager:
         # the string is in the order of [x, y, z, w, x, y, z, isActive], separated by commas
         pub_message_on_topic += f"{position[0]},{position[1]},{-position[2]},"
         pub_message_on_topic += f"{quaternion[0]},{quaternion[1]},{quaternion[2]},{quaternion[3]},"  # the quaternion is in the order of x,y,z,w
-        pub_message_on_topic += f"1"  # isActive since we are sending the calculated poses
+        pub_message_on_topic += (
+            f"1"  # isActive since we are sending the calculated poses
+        )
 
         self.pub_messages[topic] = pub_message_on_topic
+
     # def run(self):
     #     self.connected = True
     #     pub_thread = threading.Thread(target=self.publisher_thread)
