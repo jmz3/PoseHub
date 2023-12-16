@@ -29,6 +29,7 @@ def main(args):
             # test receiving poses
             # print('tool 1: ', zmq_manager_1.sub_poses['tool_1'])
             poseinfo = zmq_manager_1.receive_poses()
+            # print(poseinfo)
             # if len(poseinfo) != 0:
             #     print(poseinfo['tool_1'])
             # poseinfo should be a dictionary with key as object name and value is [pose, isActive]
@@ -39,11 +40,26 @@ def main(args):
             # print('tool 3: ', zmq_manager_1.sub_poses['tool_3'])
 
             # test sending messages
-            zmq_manager_1.pub_messages["topic4"] = f"topic4 test message {i}"
+            # zmq_manager_1.pub_messages["tool_2"] = f"topic4 test message {i}"
             # zmq_manager_1.pub_messages["topic5"] = f"topic5 test message {i}"
             # zmq_manager_1.pub_messages["topic6"] = f"topic6 test message {i}"
             i += 1e-6
-
+            
+            # test update poses
+            try:
+                tool1_pose = poseinfo['tool_1'][0]
+                tool2_pose = tool1_pose.copy()
+                tool2_quat = Rot.from_matrix(tool2_pose[:3, :3]).as_quat().reshape(1, -1)
+                tool2_trans = tool2_pose[:3, 3].reshape(1, -1)
+                tool2_pose = np.hstack([tool2_trans, tool2_quat])
+                tool2_pose[:,:3] += np.array([-0.03, 0.0, 0.0])
+                tool2_pose[:,2] *= -1
+                tool2_pose_str = ",".join(str(num) for num in tool2_pose.flatten())
+                # print(tool1_pose)
+                zmq_manager_1.pub_messages["tool_2"] = tool2_pose_str+',0'
+            except:
+                pass
+            
     except KeyboardInterrupt:
         # terminate_ZMQManager(zmq_manager_1, sub_thread_1, pub_thread_1)
         zmq_manager_1.terminate()
@@ -56,7 +72,7 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--sub_ip", default="192.168.1.23", type=str, help="subscriber ip address"
+        "--sub_ip", default="10.203.59.134", type=str, help="subscriber ip address"
     )  # 10.203.183.32
     parser.add_argument(
         "--sub_port", default="5588", type=str, help="port number for subscriber"
@@ -76,8 +92,24 @@ if __name__ == "__main__":
         type=str,
         help="publisher topic",
     )
-    parser.add_argument("--sensor_name", default="h1", type=str, help="sensor name")
-
     args = parser.parse_args()
 
-    main(args)
+    args_1 = argparse.Namespace(
+    sub_ip=args.sub_ip,
+    sub_port="5588",
+    pub_port="5589",
+    sub_topic=["tool_1", "tool_2", "tool_3"],
+    pub_topic=["tool_1", "tool_2", "tool_3"],
+    sensor_name="h1"
+    ) # args for h1 sensor
+
+    args_2 = argparse.Namespace(    
+        sub_ip="10.203.150.51",
+        sub_port="5589",
+        pub_port="5580",
+        sub_topic=["tool_1", "tool_2", "tool_3"],
+        pub_topic=["tool_1", "tool_2", "tool_3"],
+        sensor_name="h2"
+        )
+    
+    main(args_1)

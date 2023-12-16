@@ -21,7 +21,7 @@ class ZMQManager:
             topic: f"{topic} Waiting for pub message..." for topic in self.pub_topic
         }
         self.sub_poses = {
-            topic: f"{topic} Waiting for sub message..." for topic in self.pub_topic
+            topic: f"{topic} Waiting for sub message..." for topic in self.sub_topic
         }
         # self.sub_poses = defaultdict()
 
@@ -128,25 +128,27 @@ class ZMQManager:
         pose_mtx = np.identity(4)
         tool_info = {}
         for topic in self.sub_topic:
+            # print(topic)
             # topic = topic.decode("utf-8")
             if topic in received_dict:  # check if the topic is in the received_dict
+                # print(topic)
                 if len(received_dict[topic].split(",")) < 7:
                     # means no pose received
-                    print("waiting for poses")
-                    return {}
+                    print(f'{topic}',received_dict[topic])
+                    continue
                 else:
                     
                     twist = np.array([float(x) for x in received_dict[topic].split(",")])
-                    print(twist)
+                    # print(twist)
                     pose_mtx[:3, :3] = Rot.from_quat(twist[3:7]).as_matrix()
                     pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
                     tool_info[topic] = [
                         pose_mtx,
                         twist[7] == 1,
                     ]  # twist[7] == 1 means isActive?
-
+                    # print(tool_info)
             else:
-                # print("Subscribing to the topic: ", topic, " but no message received")
+                print("Subscribing to the topic: ", topic, " but no message received")
                 return {}
         return tool_info
     
