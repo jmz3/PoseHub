@@ -17,4 +17,13 @@ env.bak/
 
 # test scripts
 **/test.py
-src/test_script.ipynb
+**/test_script.ipynb
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+**.ipynb
+
+# image
+**.png
+**.jpg
+**.jpeg

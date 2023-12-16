@@ -73,10 +73,13 @@ class PoseGraph:
     def add_sensor(self, sensor_id: str, poses: Dict[str, Tuple[np.ndarray, bool]]):
         """
         Add a sensor as a node in the graph, and add the corresponding edge between the sensor and the objects in the graph
+        Overload function for the case when the sensor is connected to some objects
 
         Args:
         ----------
-            sensor_id: str, id of the sensor
+            sensor_id: str, id of the sensor, the sensor id should be unique
+                            input the sensor id without the prefix "sensor_"
+                            the prefix will be added in the function
             poses: Dict[str, List[np.ndarray(np.float32, (4, 4)), bool]], a dictionary of poses,
                                          the key is the object id, the value is a tuple of the pose
                                          and a bool indicating if the pose is active,
@@ -113,6 +116,26 @@ class PoseGraph:
                 isActive=pose[1][1],
             )
 
+    def add_sensor(self, sensor_id: str):
+        """
+        Add a sensor as a node in the graph, overload function for the case when the sensor is not connected to any object
+
+        Args:
+        ----------
+            sensor_id: str, id of the sensor, the sensor id should be unique
+                            input the sensor id without the prefix "sensor_"
+                            the prefix will be added in the function
+        """
+        sensor_id_prefix = "sensor_" + sensor_id
+
+        if sensor_id_prefix in self.sensor_id:
+            print(
+                "The sensor "
+                + sensor_id_prefix
+                + " is already in the graph \nPlease use update_graph() to update the edges"
+            )
+            return
+
     def add_object(self, object_id):
         """
         Add an object as a node in the graph
@@ -142,12 +165,11 @@ class PoseGraph:
         """
 
         object_ids = list(poses.keys())
-        sensor_id = "sensor_" + sensor_id
+        sensor_id_prefix = "sensor_" + sensor_id
 
-        if sensor_id not in self.sensor_id:
-            print(sensor_id + " is not in the graph, add it to the graph ... ")
+        if sensor_id_prefix not in self.sensor_id:
+            print(sensor_id_prefix + " is not in the graph, add it to the graph ... ")
             self.add_sensor(sensor_id, poses)
-            print("The parent node is not in the graph, add it to the graph ... ")
             return
         else:
             # update the transformation between the parent node and the child node
@@ -157,19 +179,21 @@ class PoseGraph:
                 object_id_prefix = "object_" + object_id
                 try:
                     # update the tf between the sensor and the object
-                    self.edges[sensor_id][object_id_prefix] = poses[object_id]
+                    self.edges[sensor_id_prefix][object_id_prefix] = poses[object_id]
 
                     # update the tf from the object to the sensor, the tf is the inverse of the tf from the sensor to the object
-                    self.edges[object_id_prefix][sensor_id][0] = np.linalg.inv(
+                    self.edges[object_id_prefix][sensor_id_prefix][0] = np.linalg.inv(
                         poses[object_id][0]
                     )
-                    self.edges[object_id_prefix][sensor_id][1] = poses[object_id][1]
+                    self.edges[object_id_prefix][sensor_id_prefix][1] = poses[
+                        object_id
+                    ][1]
                 except KeyError:
                     # Tackle the case when the object is not in the graph
                     # TODO: add the object to the graph
                     print(
                         "The object",
-                        object_id,
+                        object_id_prefix,
                         " is not in the graph, add it to the graph ... ",
                     )
 
