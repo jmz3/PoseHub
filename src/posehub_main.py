@@ -36,28 +36,31 @@ def main(args):
         sub_port="5589",
         pub_port="5580",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
-        pub_topic=[b"topic4", b"topic5", b"topic6"],
+        pub_topic=[tool_1_id, tool_2_id, tool_3_id],
         sensor_name="h2",
     )  # args for h2 sensor
 
-    zmq_manager_1, sub_thread_1, pub_thread_1 = ZMQManager.initialize(
-        args_1.sub_ip,
-        args_1.sub_port,
-        args_1.pub_port,
-        args_1.sub_topic,
-        args_1.pub_topic,
-        args_1.sensor_name,
-    )
-    zmq_manager_2, sub_thread_2, pub_thread_2 = ZMQManager.initialize(
-        args_2.sub_ip,
-        args_2.sub_port,
-        args_2.pub_port,
-        args_2.sub_topic,
-        args_2.pub_topic,
-        args_2.sensor_name,
+    zmq_manager_1 = ZMQManager(
+        sub_ip=args_1.sub_ip,
+        sub_port=args_1.sub_port,
+        pub_port=args_1.pub_port,
+        sub_topic=args_1.sub_topic,
+        pub_topic=args_1.pub_topic,
+        sensor_name=args_1.sensor_name,
     )
 
-    # zmq_manager_2, sub_thread_2, pub_thread_2 = initialize_ZMQManager(args.sub_ip, args.sub_port, args.pub_port, args.sub_topic, args.pub_topic)
+    zmq_manager_2 = ZMQManager(
+        sub_ip=args_2.sub_ip,
+        sub_port=args_2.sub_port,
+        pub_port=args_2.pub_port,
+        sub_topic=args_2.sub_topic,
+        pub_topic=args_2.pub_topic,
+        sensor_name=args_2.sensor_name,
+    )
+
+    zmq_manager_1.initialize()
+    zmq_manager_2.initialize()
+
     i = 0
     try:
         while True:
@@ -81,12 +84,11 @@ def main(args):
             # send messages
             for topic in args_1.pub_topic:
                 # transfer the topic from bytes to string
-                pose = pose_graph.get_transform(
-                    "h1", topic.decode("utf-8"), solver_method="BFS"
-                )
+                pose = pose_graph.get_transform("h1", topic, solver_method="BFS")
                 zmq_manager_1.send_poses(topic, zmq_manager_1, pose)
 
             i += 1e-6
+            pose_graph.viz_graph(axis_limit=0.7, world_frame_id="h1")
 
     except KeyboardInterrupt:
         # terminate_ZMQManager(zmq_manager_1, sub_thread_1, pub_thread_1)
