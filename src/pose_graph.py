@@ -1,6 +1,9 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 from transform_solver import TransformSolver
 from typing import Type, Dict, List, Optional, Tuple
+from itertools import cycle
 
 
 class PoseGraph:
@@ -153,8 +156,14 @@ class PoseGraph:
             for object_id in object_ids:
                 object_id_prefix = "object_" + object_id
                 try:
-                    self.edges[sensor_id][object_id_prefix][0] = poses[object_id][0]
-                    self.edges[sensor_id][object_id_prefix][1] = poses[object_id][1]
+                    # update the tf between the sensor and the object
+                    self.edges[sensor_id][object_id_prefix] = poses[object_id]
+
+                    # update the tf from the object to the sensor, the tf is the inverse of the tf from the sensor to the object
+                    self.edges[object_id_prefix][sensor_id][0] = np.linalg.inv(
+                        poses[object_id][0]
+                    )
+                    self.edges[object_id_prefix][sensor_id][1] = poses[object_id][1]
                 except KeyError:
                     # Tackle the case when the object is not in the graph
                     # TODO: add the object to the graph
@@ -251,6 +260,133 @@ class PoseGraph:
             raise RuntimeError("Unexpected error when getting the transformation")
 
         return None
+
+    def viz_graph(self, ax: plt.Axes, world_frame_id: str, axis_limit: float = 0.5):
+        """
+        Visualize the graph
+
+        Args:
+        ----------
+            ax: plt.Axes,   the axes to plot the graph
+            world_frame: str,   the id of the world frame,
+                                the world frame is the frame you choose to remain stationary in the plot
+            axis_limit: float,  the limit of the axis, default is 0.5
+
+        """
+        # define a 3d frame, the origin is at the center of the world frame
+        # the x axis is red, the y axis is green, the z axis is blue
+        # the length of each axis is axis_length
+
+        # display frequency is up to 100Hz
+
+        # clear the plot
+        ax.cla()
+        ax.set_xlabel("X", fontsize=12)
+        ax.set_ylabel("Y", fontsize=12)
+        ax.set_zlabel("Z", fontsize=12)
+        ax.set_xlim(-axis_limit, axis_limit)
+        ax.set_ylim(-axis_limit, axis_limit)
+        ax.set_zlim(-axis_limit, axis_limit)
+        ax.set_title("Pose Graph", fontsize=20)
+        marker_styles = [
+            "o",
+            "s",
+            "^",
+            "v",
+            "*",
+            "+",
+            "x",
+            "D",
+            "|",
+            "_",
+        ]  # 10 styles, can be extended if needed
+        marker_colors = [
+            "r",
+            "g",
+            "b",
+            "c",
+            "m",
+            "y",
+            "k",
+            "w",
+        ]  # 8 colors, can be extended if needed
+
+        # construct the world frame
+        world_frame_id = "object_" + world_frame_id
+
+        axis_length = 0.3
+
+        # define the world frame
+        x_axis = np.array(
+            [[axis_length, 0, 0, 1], [0, 0, 0, 1]]
+        )  # homogeneous coordinates of x
+        y_axis = np.array(
+            [[0, axis_length, 0, 1], [0, 0, 0, 1]]
+        )  # homogeneous coordinates of y
+        z_axis = np.array(
+            [[0, 0, axis_length, 1], [0, 0, 0, 1]]
+        )  # homogeneous coordinates of z
+
+        # plot the world frame
+        ax.plot(x_axis[:, 0], x_axis[:, 1], x_axis[:, 2], "r")
+        ax.plot(y_axis[:, 0], y_axis[:, 1], y_axis[:, 2], "g")
+        ax.plot(z_axis[:, 0], z_axis[:, 1], z_axis[:, 2], "b")
+        ax.text(
+            x_axis[0, 0],
+            x_axis[0, 1],
+            x_axis[0, 2],
+            "World Frame",
+            color="black",
+            fontsize=12,
+        )
+
+        sCount = 0
+        # apply transformation to the frame
+        for sensor in self.sensor_id:
+            sCount += 1
+            world2sensor = self.edges[world_frame_id][sensor][0]
+            # print(world2sensor)
+            for object in self.edges[sensor]:
+                if object == world_frame_id:
+                    continue  # skip the world frame itself
+
+                transform = self.edges[sensor][object][0]
+                x_axis_temp = world2sensor @ transform @ x_axis.T
+                y_axis_temp = world2sensor @ transform @ y_axis.T
+                z_axis_temp = world2sensor @ transform @ z_axis.T
+
+                x_axis_temp = x_axis_temp.T
+                y_axis_temp = y_axis_temp.T
+                z_axis_temp = z_axis_temp.T
+
+                # plot the transformed frame
+                ax.plot(x_axis_temp[:, 0], x_axis_temp[:, 1], x_axis_temp[:, 2], "r")
+                ax.plot(y_axis_temp[:, 0], y_axis_temp[:, 1], y_axis_temp[:, 2], "g")
+                ax.plot(z_axis_temp[:, 0], z_axis_temp[:, 1], z_axis_temp[:, 2], "b")
+
+                # show the text of the object id next to the object frame origin
+                ax.text(
+                    x_axis_temp[1, 0],
+                    x_axis_temp[1, 1],
+                    x_axis_temp[1, 2] + axis_length + 0.05,
+                    object,
+                    color="black",
+                    bbox=dict(facecolor="red", alpha=0.5),
+                    fontsize=12,
+                )
+                ax.scatter(
+                    x_axis_temp[0, 0] + 0.05 * sCount,
+                    x_axis_temp[0, 1],
+                    x_axis_temp[0, 2],
+                    marker=marker_styles[sCount % len(marker_styles)],
+                    color=marker_colors[sCount % len(marker_colors)],
+                    s=50,
+                    label=sensor,
+                )
+
+            # print(y_axis)
+        ax.legend(loc="best", fontsize=12)
+        # print(transform)
 
 
 if __name__ == "__main__":

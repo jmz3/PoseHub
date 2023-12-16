@@ -14,3 +14,7 @@ env.bak/
 .settings/
 *.code-workspace
 *.vsix
+
+# test scripts
+**/test.py
+src/test_script.ipynb
