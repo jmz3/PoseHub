@@ -149,7 +149,7 @@ class ZMQManager:
                         pose_mtx,
                         twist[7] == 1,
                     ]  # twist[7] == 1 means isActive?
-                    # print(tool_info)
+                    print(tool_info['tool_1'])
             else:
                 print("Subscribing to the topic: ", topic, " but no message received")
                 return {}

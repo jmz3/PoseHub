@@ -7,6 +7,7 @@ import threading
 import time
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
+import matplotlib.pyplot as plt
 
 
 def main(args):
@@ -17,13 +18,15 @@ def main(args):
     memoryBuffer = []
     # initialize the pose graph
     pose_graph = PoseGraph()
+    figure = plt.figure()
+    ax = figure.add_subplot(projection="3d")
 
     tool_1_id = "tool_1"
     tool_2_id = "tool_2"
     tool_3_id = "tool_3"
 
     args_1 = argparse.Namespace(
-        sub_ip="192.168.1.23",
+        sub_ip=args.sub_ip,
         sub_port="5588",
         pub_port="5589",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
@@ -59,7 +62,7 @@ def main(args):
     )
 
     zmq_manager_1.initialize()
-    zmq_manager_2.initialize()
+    # zmq_manager_2.initialize()
 
     i = 0
     try:
@@ -67,28 +70,36 @@ def main(args):
             # Running the main loop
 
             # receive messages
-            poseinfo_sensor1 = zmq_manager_1.receive_poses(args_1, zmq_manager_1)
+            poseinfo_sensor1 = zmq_manager_1.receive_poses()
             if len(poseinfo_sensor1) != 0:
-                print("poseinfo: ", poseinfo_sensor1)
+                pose_graph.update_graph("h1",poseinfo_sensor1)
+                print("graph nodes: ", pose_graph.nodes)
+                pass
 
             else:
                 print("poseinfo_sensor1 is empty")
 
-            poseinfo_sensor2 = zmq_manager_2.receive_poses(args_2, zmq_manager_2)
-            if len(poseinfo_sensor2) != 0:
-                print("poseinfo: ", poseinfo_sensor2)
+            # poseinfo_sensor2 = zmq_manager_2.receive_poses()
+            # if len(poseinfo_sensor2) != 0:
+            #     print("poseinfo: ", poseinfo_sensor2)
 
-            else:
-                print("poseinfo_sensor2 is empty")
+            # else:
+            #     print("poseinfo_sensor2 is empty")
 
             # send messages
             for topic in args_1.pub_topic:
                 # transfer the topic from bytes to string
                 pose = pose_graph.get_transform("h1", topic, solver_method="BFS")
-                zmq_manager_1.send_poses(topic, zmq_manager_1, pose)
+                if pose:
+                    zmq_manager_1.send_poses(topic, pose)
 
             i += 1e-6
             
+            # visualize the poses
+            pose_graph.viz_graph(ax=ax, world_frame_id="h1", axis_limit=1.0)
+            
+            plt.pause(0.001)
+            plt.show()
             # test update poses
             try:
                 tool1_pose = poseinfo_sensor1['tool_1'][0]
@@ -107,7 +118,7 @@ def main(args):
     except KeyboardInterrupt:
         # terminate_ZMQManager(zmq_manager_1, sub_thread_1, pub_thread_1)
         zmq_manager_1.terminate()
-        zmq_manager_2.terminate()
+        # zmq_manager_2.terminate()
         # terminate_ZMQManager(zmq_manager_2, sub_thread_2, pub_thread_2)
 
 
@@ -139,22 +150,22 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    args_1 = argparse.Namespace(
-    sub_ip=args.sub_ip,
-    sub_port="5588",
-    pub_port="5589",
-    sub_topic=["tool_1", "tool_2", "tool_3"],
-    pub_topic=["tool_1", "tool_2", "tool_3"],
-    sensor_name="h1"
-    ) # args for h1 sensor
+    # args_1 = argparse.Namespace(
+    # sub_ip=args.sub_ip,
+    # sub_port="5588",
+    # pub_port="5589",
+    # sub_topic=["tool_1", "tool_2", "tool_3"],
+    # pub_topic=["tool_1", "tool_2", "tool_3"],
+    # sensor_name="h1"
+    # ) # args for h1 sensor
 
-    args_2 = argparse.Namespace(    
-        sub_ip="10.203.150.51",
-        sub_port="5589",
-        pub_port="5580",
-        sub_topic=["tool_1", "tool_2", "tool_3"],
-        pub_topic=["tool_1", "tool_2", "tool_3"],
-        sensor_name="h2"
-        )
+    # args_2 = argparse.Namespace(    
+    #     sub_ip="10.203.150.51",
+    #     sub_port="5589",
+    #     pub_port="5580",
+    #     sub_topic=["tool_1", "tool_2", "tool_3"],
+    #     pub_topic=["tool_1", "tool_2", "tool_3"],
+    #     sensor_name="h2"
+    #     )
     
-    main(args_1)
+    main(args)
