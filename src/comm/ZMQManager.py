@@ -137,19 +137,20 @@ class ZMQManager:
                 # print(topic)
                 if len(received_dict[topic].split(",")) < 7:
                     # means no pose received
-                    print(f'{topic}',received_dict[topic])
+                    # print(f'{topic}',received_dict[topic])
                     continue
                 else:
                     twist = np.array(
                         [float(x) for x in received_dict[topic].split(",")]
                     )
+                    pose_mtx = np.identity(4)
                     pose_mtx[:3, :3] = Rot.from_quat(twist[3:7]).as_matrix()
                     pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
                     tool_info[topic] = [
                         pose_mtx,
                         twist[7] == 1,
                     ]  # twist[7] == 1 means isActive?
-                    print(tool_info['tool_1'])
+                # print(tool_info['tool_1'][0][:3,3])
             else:
                 print("Subscribing to the topic: ", topic, " but no message received")
                 return {}
@@ -165,20 +166,29 @@ class ZMQManager:
         if transform_mtx.shape != (4, 4):
             print("The size of the transformation matrix is not 4x4")
             return
+        
+        quat = Rot.from_matrix(transform_mtx[:3, :3]).as_quat().reshape(1, -1)
+        trans = transform_mtx[:3, 3].reshape(1, -1)
+        new_pose = np.hstack([trans, quat])
+        # Change to unity convention
+        new_pose[:,2] *= -1
+        # Convert to string
+        new_pose_str = ",".join(str(num) for num in new_pose.flatten())
+        self.pub_messages[topic] = new_pose_str + ',1'
+        
+        # pub_message_on_topic = ""
+        # position = transform_mtx[:3, 3]
+        # quaternion = Rot.from_matrix(transform_mtx[:3, :3]).as_quat()
 
-        pub_message_on_topic = ""
-        position = transform_mtx[:3, 3]
-        quaternion = Rot.from_matrix(transform_mtx[:3, :3]).as_quat()
+        # # encode the transformation matrix into a string
+        # # the string is in the order of [x, y, z, w, x, y, z, isActive], separated by commas
+        # pub_message_on_topic += f"{position[0]},{position[1]},{-position[2]},"
+        # pub_message_on_topic += f"{quaternion[0]},{quaternion[1]},{quaternion[2]},{quaternion[3]},"  # the quaternion is in the order of x,y,z,w
+        # pub_message_on_topic += (
+        #     f"1"  # isActive since we are sending the calculated poses
+        # )
 
-        # encode the transformation matrix into a string
-        # the string is in the order of [x, y, z, w, x, y, z, isActive], separated by commas
-        pub_message_on_topic += f"{position[0]},{position[1]},{-position[2]},"
-        pub_message_on_topic += f"{quaternion[0]},{quaternion[1]},{quaternion[2]},{quaternion[3]},"  # the quaternion is in the order of x,y,z,w
-        pub_message_on_topic += (
-            f"1"  # isActive since we are sending the calculated poses
-        )
-
-        self.pub_messages[topic] = pub_message_on_topic
+        # self.pub_messages[topic] = pub_message_on_topic
 
     # def run(self):
     #     self.connected = True
