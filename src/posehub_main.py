@@ -83,18 +83,17 @@ def main(args):
             else:
                 print("poseinfo_sensor1 is empty")
 
-            if len(poseinfo_sensor2) != 0:
-                pose_graph.update_graph("h2", poseinfo_sensor2)
-                # print("poseinfo: ", poseinfo_sensor2)
-            else:
-                print("poseinfo_sensor2 is empty")
-            print("Time for pose graph update: ", time.time() - start_time)
-            # # send messages
-            for topic in args_1.pub_topic:
-                # transfer the topic from bytes to string
-                pose = pose_graph.get_transform("h1", topic, solver_method="BFS")
-                if pose is not None:
-                    zmq_manager_1.send_poses(topic, pose)
+            # if len(poseinfo_sensor2) != 0:
+            #     print("poseinfo: ", poseinfo_sensor2)
+            # else:
+            #     print("poseinfo_sensor2 is empty")
+
+            # send messages
+            # for topic in args_1.pub_topic:
+            #     # transfer the topic from bytes to string
+            #     pose = pose_graph.get_transform("h1", topic, solver_method="BFS")
+            #     if pose:
+            #         zmq_manager_1.send_poses(topic, pose)
 
             # # for topic in args_2.pub_topic:
             # #     # transfer the topic from bytes to string
@@ -105,14 +104,13 @@ def main(args):
             # visualize the poses
             start_time = time.time()
             pose_graph.viz_graph(
-                ax=ax, world_frame_id="tool_3", axis_limit=1.0, frame_type="object"
+                ax=ax, world_frame_id="h1", axis_limit=1.0, frame_type="sensor"
             )
-            
+
             plt.pause(0.001)
             plt.draw()
             print("Time for visualization: ", time.time() - start_time)
-            
-            
+
             # # test update poses
             # try:
             #     tool1_pose = poseinfo_sensor1["tool_1"][0]
@@ -124,6 +122,7 @@ def main(args):
         zmq_manager_1.terminate()
         zmq_manager_2.terminate()
         plt.ioff()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
