@@ -80,19 +80,19 @@ def main(args):
             else:
                 print("poseinfo_sensor1 is empty")
 
-            # poseinfo_sensor2 = zmq_manager_2.receive_poses()
-            # if len(poseinfo_sensor2) != 0:
-            #     print("poseinfo: ", poseinfo_sensor2)
+            poseinfo_sensor2 = zmq_manager_2.receive_poses()
+            if len(poseinfo_sensor2) != 0:
+                print("poseinfo: ", poseinfo_sensor2)
 
-            # else:
-            #     print("poseinfo_sensor2 is empty")
+            else:
+                print("poseinfo_sensor2 is empty")
 
             # send messages
-            # for topic in args_1.pub_topic:
-            #     # transfer the topic from bytes to string
-            #     pose = pose_graph.get_transform("h1", topic, solver_method="BFS")
-            #     if pose:
-            #         zmq_manager_1.send_poses(topic, pose)
+            for topic in args_1.pub_topic:
+                # transfer the topic from bytes to string
+                pose = pose_graph.get_transform("h1", topic, solver_method="BFS")
+                if pose:
+                    zmq_manager_1.send_poses(topic, pose)
 
             i += 1e-6
             
