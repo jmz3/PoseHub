@@ -70,17 +70,22 @@ class PoseGraph:
         self.edges[parent_id][child_id] = [transformation, isActive]
         self.edges[child_id][parent_id] = [np.linalg.inv(transformation), isActive]
 
-    def add_sensor(self, sensor_id: str, poses: Dict[str, Tuple[np.ndarray, bool]]):
+    def add_sensor(
+        self, sensor_id: str, poses: Optional[Dict[str, Tuple[np.ndarray, bool]]] = None
+    ):
         """
-        Add a sensor as a node in the graph, and add the corresponding edge between the sensor and the objects in the graph
+        Add a sensor as a node in the graph. If poses are provided, add the corresponding edges between the sensor and the objects in the graph.
 
         Args:
         ----------
-            sensor_id: str, id of the sensor
-            poses: Dict[str, List[np.ndarray(np.float32, (4, 4)), bool]], a dictionary of poses,
-                                         the key is the object id, the value is a tuple of the pose
-                                         and a bool indicating if the pose is active,
-                                         use tuple to make the pose immutable and for the efficiency of traversal
+            sensor_id: str, id of the sensor, the sensor id should be unique
+                            input the sensor id without the prefix "sensor_"
+                            the prefix will be added in the function
+            poses: Optional[Dict[str, Tuple[np.ndarray, bool]]], a dictionary of poses,
+                            the key is the object id, the value is a tuple of the pose
+                            and a bool indicating if the pose is active,
+                            use tuple to make the pose immutable and for the efficiency of traversal
+                            Default is None, which means no connected objects are specified.
         """
         sensor_id_prefix = (
             "sensor_" + sensor_id
@@ -98,20 +103,32 @@ class PoseGraph:
 
         self._add_node(sensor_id_prefix)
 
-        for pose in poses.items():
+        if poses:
+            # for pose in poses.items():
             # check if the object_id is already in the graph,
             # if not, add it to the graph
-            object_id_prefix = "object_" + pose[0]
-            if object_id_prefix not in self.object_id:
-                self.add_object(pose[0])
+            # object_id_prefix = "object_" + pose[0]
+            # if object_id_prefix not in self.object_id:
+            #     self.add_object(pose[0])
 
-            # add the edge between the sensor and the object
-            self._add_edge(
-                sensor_id_prefix,
-                object_id_prefix,
-                transformation=pose[1][0],
-                isActive=pose[1][1],
-            )
+            # # add the edge between the sensor and the object
+            # self._add_edge(
+            #     sensor_id_prefix,
+            #     object_id_prefix,
+            #     transformation=pose[1][0],
+            #     isActive=pose[1][1],
+            # )
+            for object_id, (transformation, isActive) in poses.items():
+                object_id_prefix = "object_" + object_id
+                if object_id_prefix not in self.object_id:
+                    self.add_object(object_id)
+
+                self._add_edge(
+                    sensor_id_prefix,
+                    object_id_prefix,
+                    transformation=transformation,
+                    isActive=isActive,
+                )
 
     def add_object(self, object_id):
         """
@@ -142,12 +159,12 @@ class PoseGraph:
         """
 
         object_ids = list(poses.keys())
-        sensor_id = "sensor_" + sensor_id
+        sensor_id_prefix = "sensor_" + sensor_id
 
-        if sensor_id not in self.sensor_id:
-            print(sensor_id + " is not in the graph, add it to the graph ... ")
+        if sensor_id_prefix not in self.sensor_id:
+            print(sensor_id_prefix + " is not in the graph, add it to the graph ... ")
+            # self.add_sensor(sensor_id, poses)
             self.add_sensor(sensor_id, poses)
-            print("The parent node is not in the graph, add it to the graph ... ")
             return
         else:
             # update the transformation between the parent node and the child node
@@ -157,21 +174,34 @@ class PoseGraph:
                 object_id_prefix = "object_" + object_id
                 try:
                     # update the tf between the sensor and the object
-                    self.edges[sensor_id][object_id_prefix] = poses[object_id]
+                    self.edges[sensor_id_prefix][object_id_prefix] = poses[object_id]
 
                     # update the tf from the object to the sensor, the tf is the inverse of the tf from the sensor to the object
-                    self.edges[object_id_prefix][sensor_id][0] = np.linalg.inv(
+                    self.edges[object_id_prefix][sensor_id_prefix][0] = np.linalg.inv(
                         poses[object_id][0]
                     )
-                    self.edges[object_id_prefix][sensor_id][1] = poses[object_id][1]
+                    self.edges[object_id_prefix][sensor_id_prefix][1] = poses[
+                        object_id
+                    ][1]
                 except KeyError:
                     # Tackle the case when the object is not in the graph
                     # TODO: add the object to the graph
                     print(
                         "The object",
-                        object_id,
+                        object_id_prefix,
                         " is not in the graph, add it to the graph ... ",
                     )
+                    for object_id, (transformation, isActive) in poses.items():
+                        object_id_prefix = "object_" + object_id
+                        if object_id_prefix not in self.object_id:
+                            self.add_object(object_id)
+
+                        self._add_edge(
+                            sensor_id_prefix,
+                            object_id_prefix,
+                            transformation=transformation,
+                            isActive=isActive,
+                        )
 
         # TODO: need to consider the case when the object is no longer visible for the sensor
         # Is it necessary to remove the edge between the sensor and the object?
@@ -261,7 +291,13 @@ class PoseGraph:
 
         return None
 
-    def viz_graph(self, ax: plt.Axes, world_frame_id: str, axis_limit: float = 0.5):
+    def viz_graph(
+        self,
+        ax: plt.Axes,
+        world_frame_id: str,
+        axis_limit: float = 0.5,
+        frame_type: [Optional[str]] = "object",
+    ):
         """
         Visualize the graph
 
@@ -271,6 +307,7 @@ class PoseGraph:
             world_frame: str,   the id of the world frame,
                                 the world frame is the frame you choose to remain stationary in the plot
             axis_limit: float,  the limit of the axis, default is 0.5
+            frame_type: str,    the type of the frame to plot, default is object, can be sensor or object
 
         """
         # define a 3d frame, the origin is at the center of the world frame
@@ -312,7 +349,18 @@ class PoseGraph:
         ]  # 8 colors, can be extended if needed
 
         # construct the world frame
-        world_frame_id = "object_" + world_frame_id
+        world_frame_id = frame_type + "_" + world_frame_id
+
+        if world_frame_id not in self.nodes:
+            print(
+                "The world frame "
+                + world_frame_id
+                + " is not in the graph, please check the input"
+            )  # do not plot if the world frame is not in the graph
+            return
+
+        if len(self.edges) == 0 or len(self.nodes) == 1:  # if the graph has no edges:
+            return  # do not plot if the graph has no other elements
 
         axis_length = 0.3
 
@@ -344,8 +392,13 @@ class PoseGraph:
         # apply transformation to the frame
         for sensor in self.sensor_id:
             sCount += 1
-            world2sensor = self.edges[world_frame_id][sensor][0]
-            # print(world2sensor)
+
+            world2sensor = (
+                self.edges[world_frame_id][sensor][0]
+                if frame_type == "object"
+                else np.identity(4)
+            )
+
             for object in self.edges[sensor]:
                 if object == world_frame_id:
                     continue  # skip the world frame itself

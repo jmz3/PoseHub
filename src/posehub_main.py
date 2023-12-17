@@ -18,7 +18,10 @@ def main(args):
     memoryBuffer = []
     # initialize the pose graph
     pose_graph = PoseGraph()
+
+    plt.ion()
     figure = plt.figure()
+
     ax = figure.add_subplot(projection="3d")
 
     tool_1_id = args.sub_topic[0]
@@ -36,7 +39,7 @@ def main(args):
 
     args_2 = argparse.Namespace(
         sub_ip=args.sub_ip_2,
-        sub_port="5589",
+        sub_port="5588",
         pub_port="5580",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
         pub_topic=[tool_1_id, tool_2_id, tool_3_id],
@@ -62,7 +65,10 @@ def main(args):
     )
 
     zmq_manager_1.initialize()
-    # zmq_manager_2.initialize()
+    zmq_manager_2.initialize()
+
+    pose_graph.add_sensor("h1")
+    pose_graph.add_sensor("h2")
 
     i = 0
     try:
@@ -71,19 +77,14 @@ def main(args):
 
             # receive messages
             poseinfo_sensor1 = zmq_manager_1.receive_poses()
+            poseinfo_sensor2 = zmq_manager_2.receive_poses()
             if len(poseinfo_sensor1) != 0:
-                # pose_graph.update_graph("h1",poseinfo_sensor1)
-                # print("graph nodes: ", pose_graph.nodes)
-                # print('not empty')
-                print(poseinfo_sensor1['tool_1'][0][:3,3])
-
+                pose_graph.update_graph("h1", poseinfo_sensor1)
             else:
                 print("poseinfo_sensor1 is empty")
 
-            poseinfo_sensor2 = zmq_manager_2.receive_poses()
             if len(poseinfo_sensor2) != 0:
                 print("poseinfo: ", poseinfo_sensor2)
-
             else:
                 print("poseinfo_sensor2 is empty")
 
@@ -95,22 +96,35 @@ def main(args):
                     zmq_manager_1.send_poses(topic, pose)
 
             i += 1e-6
-            
-            # # visualize the poses
-            # pose_graph.viz_graph(ax=ax, world_frame_id="h1", axis_limit=1.0)
-            
-            # plt.pause(0.001)
-            # plt.show()
+
+            # visualize the poses
+            pose_graph.viz_graph(
+                ax=ax, world_frame_id="tool_3", axis_limit=1.0, frame_type="object"
+            )
+
+            plt.pause(0.001)
+            plt.show()
             # test update poses
             try:
-                tool1_pose = poseinfo_sensor1['tool_1'][0]
-                zmq_manager_1.send_poses("tool_2", tool1_pose)
+                tool1_pose = poseinfo_sensor1["tool_1"][0]
+                tool2_pose = tool1_pose.copy()
+                tool2_quat = (
+                    Rot.from_matrix(tool2_pose[:3, :3]).as_quat().reshape(1, -1)
+                )
+                tool2_trans = tool2_pose[:3, 3].reshape(1, -1)
+                tool2_pose = np.hstack([tool2_trans, tool2_quat])
+                tool2_pose[:, :3] += np.array([-0.03, 0.0, 0.0])
+                tool2_pose[:, 2] *= -1
+                tool2_pose_str = ",".join(str(num) for num in tool2_pose.flatten())
+                # print(tool1_pose)
+                zmq_manager_1.pub_messages["tool_2"] = tool2_pose_str + ",0"
             except:
                 pass
-            
+
     except KeyboardInterrupt:
         # terminate_ZMQManager(zmq_manager_1, sub_thread_1, pub_thread_1)
         zmq_manager_1.terminate()
+        plt.ioff()
         # zmq_manager_2.terminate()
         # terminate_ZMQManager(zmq_manager_2, sub_thread_2, pub_thread_2)
 
@@ -121,10 +135,16 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--sub_ip_1", default="10.203.59.134", type=str, help="subscriber ip address sensor 1"
+        "--sub_ip_1",
+        default="10.203.59.134",
+        type=str,
+        help="subscriber ip address sensor 1",
     )  # 10.203.183.32
     parser.add_argument(
-        "--sub_ip_2", default="10.203.59.134", type=str, help="subscriber ip address sensor 2"
+        "--sub_ip_2",
+        default="10.203.59.134",
+        type=str,
+        help="subscriber ip address sensor 2",
     )
     parser.add_argument(
         "--sub_topic",
@@ -139,5 +159,23 @@ if __name__ == "__main__":
         help="publisher topic",
     )
     args = parser.parse_args()
-    
+
+    # args_1 = argparse.Namespace(
+    # sub_ip=args.sub_ip,
+    # sub_port="5588",
+    # pub_port="5589",
+    # sub_topic=["tool_1", "tool_2", "tool_3"],
+    # pub_topic=["tool_1", "tool_2", "tool_3"],
+    # sensor_name="h1"
+    # ) # args for h1 sensor
+
+    # args_2 = argparse.Namespace(
+    #     sub_ip="10.203.150.51",
+    #     sub_port="5589",
+    #     pub_port="5580",
+    #     sub_topic=["tool_1", "tool_2", "tool_3"],
+    #     pub_topic=["tool_1", "tool_2", "tool_3"],
+    #     sensor_name="h2"
+    #     )
+
     main(args)
