@@ -39,7 +39,7 @@ def main(args):
 
     args_2 = argparse.Namespace(
         sub_ip=args.sub_ip_2,
-        sub_port="5589",
+        sub_port="5588",
         pub_port="5580",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
         pub_topic=[tool_1_id, tool_2_id, tool_3_id],
@@ -65,7 +65,10 @@ def main(args):
     )
 
     zmq_manager_1.initialize()
-    # zmq_manager_2.initialize()
+    zmq_manager_2.initialize()
+
+    pose_graph.add_sensor("h1")
+    pose_graph.add_sensor("h2")
 
     i = 0
     try:
@@ -74,20 +77,16 @@ def main(args):
 
             # receive messages
             poseinfo_sensor1 = zmq_manager_1.receive_poses()
+            poseinfo_sensor2 = zmq_manager_2.receive_poses()
             if len(poseinfo_sensor1) != 0:
                 pose_graph.update_graph("h1", poseinfo_sensor1)
-                print("graph nodes: ", pose_graph.nodes)
-                pass
-
             else:
                 print("poseinfo_sensor1 is empty")
 
-            # poseinfo_sensor2 = zmq_manager_2.receive_poses()
-            # if len(poseinfo_sensor2) != 0:
-            #     print("poseinfo: ", poseinfo_sensor2)
-
-            # else:
-            #     print("poseinfo_sensor2 is empty")
+            if len(poseinfo_sensor2) != 0:
+                print("poseinfo: ", poseinfo_sensor2)
+            else:
+                print("poseinfo_sensor2 is empty")
 
             # send messages
             # for topic in args_1.pub_topic:
@@ -99,7 +98,9 @@ def main(args):
             i += 1e-6
 
             # visualize the poses
-            # pose_graph.viz_graph(ax=ax, world_frame_id="h1", axis_limit=1.0)
+            pose_graph.viz_graph(
+                ax=ax, world_frame_id="tool_3", axis_limit=1.0, frame_type="object"
+            )
 
             plt.pause(0.001)
             plt.show()
