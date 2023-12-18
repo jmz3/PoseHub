@@ -8,6 +8,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 import matplotlib.pyplot as plt
 from visualize.viz_frames import axis_init
+from visualize.viz_frames import generate_frames
 
 
 def main(args):
@@ -30,13 +31,42 @@ def main(args):
     tool_2_id = args.sub_topic[1]
     tool_3_id = args.sub_topic[2]
 
+    sensor_1_id = "h1"
+    sensor_2_id = "h2"
+
+    frames, frame_pm = generate_frames(
+        ax=ax,
+        sensors=[sensor_1_id, sensor_2_id],
+        objects=[tool_1_id, tool_2_id, tool_3_id],
+        axis_length=0.3,
+    )  # generate the frames for visualization,
+    # the number of frames is equal to the number of sensors * objects
+    # frames is a dictionary with the following structure:
+    # frames = {
+    #     "sensor_1": {
+    #         "tool_1": {
+    #             "x": None,
+    #             "y": None,
+    #             "z": None,
+    #             "sensor_tag": None,
+    #             "frame_id": None,
+    #         },
+    #         "tool_2": {
+    #             ...
+    #         },
+    #        ...
+    #     },
+    #    ...
+    # }
+    # frame_pm is a (4x4) ndarray, containing 1 origin point and 3 axes end-point of the frames
+
     args_1 = argparse.Namespace(
         sub_ip=args.sub_ip_1,
         sub_port="5588",
         pub_port="5589",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
         pub_topic=[tool_1_id, tool_2_id, tool_3_id],
-        sensor_name="h1",
+        sensor_name=sensor_1_id,
     )  # args for h1 sensor
 
     args_2 = argparse.Namespace(
@@ -45,7 +75,7 @@ def main(args):
         pub_port="5580",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
         pub_topic=[tool_1_id, tool_2_id, tool_3_id],
-        sensor_name="h2",
+        sensor_name=sensor_2_id,
     )  # args for h2 sensor
 
     zmq_manager_1 = ZMQManager(
@@ -104,7 +134,8 @@ def main(args):
 
             # visualize the poses
             start_time = time.time()
-            pose_graph.viz_graph(ax=ax, world_frame_id="h1", frame_type="sensor")
+            # pose_graph.viz_graph(ax=ax, world_frame_id="h1", frame_type="sensor")
+            viz_graph(ax=ax, frames=frames, world_frame_id="h1", frame_type="sensor")
 
             plt.pause(0.001)
             plt.draw()

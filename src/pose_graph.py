@@ -301,11 +301,14 @@ class PoseGraph:
         self,
         ax: plt.Axes,
         world_frame_id: str,
-        axis_limit: float = 0.5,
+        axis_length: float = 0.5,
         frame_type: [Optional[int]] = 1,
     ):
         """
-        Visualize the graph
+        Visualize the graph in real time, the visualization only shows the frames
+        The frames are represented as the x, y, z axes
+        The world frame is the frame that remains stationary in the plot
+        Scatter dots are used to represent which sensor can see which object
 
         Args:
         ----------
@@ -319,6 +322,14 @@ class PoseGraph:
         # define a 3d frame, the origin is at the center of the world frame
         # the x axis is red, the y axis is green, the z axis is blue
         # the length of each axis is axis_length
+        ax.cla()
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_zlabel("z")
+        ax.set_xlim(-1, 1)
+        ax.set_ylim(-1, 1)
+        ax.set_zlim(-1, 1)
+        ax.set_title("Pose Graph", fontsize=20)
 
         # display frequency is up to 100Hz
 
@@ -348,8 +359,6 @@ class PoseGraph:
             "w",
         ]  # 8 colors, can be extended if needed
 
-        # plot the world frame
-        axis_length = 0.3
         # define the world frame
         x_axis = np.array(
             [[axis_length, 0, 0, 1], [0, 0, 0, 1]]
@@ -376,12 +385,13 @@ class PoseGraph:
 
         # construct the world frame
         frame_type_enum = FrameType(frame_type)
+        scatter = []
 
         if frame_type_enum == FrameType.OBJECT:
             # if the world frame is an object frame, the world frame is the object frame itself
             # plot the object frame and the whole graph, including the object frame and the sensor frames
             sCount = 0
-            scatter = []
+
             world_frame_id_prefix = "object" + "_" + world_frame_id
             if world_frame_id_prefix not in self.nodes:
                 print(
@@ -513,10 +523,314 @@ class PoseGraph:
         # apply transformation to the frame
 
         # print(y_axis)
-        ax.legend(
-            handles=scatter, loc="best", fontsize=12, fancybox=True
-        )  # show legend, one legend for each sensor
+        if scatter:
+            ax.legend(
+                loc="best", fontsize=12, fancybox=True
+            )  # show legend, one legend for each sensor
         # print(transform)
+
+    def viz_graph_update(
+        self,
+        frames: Dict[str, Dict[str, Dict[str, plt.Axes]]],
+        frame_primitive: np.ndarray,
+        world_frame_id: str,
+        frame_type: [Optional[int]] = 1,
+    ):
+        """
+        Visualize the graph in real time, the visualization only shows the frames
+        The frames are represented as the x, y, z axes
+        The world frame is the frame that remains stationary in the plot
+        Scatter dots are used to represent which sensor can see which object
+
+        Args:
+        ----------
+            frames: Dict[str, Dict[str, Dict[str, plt.Axes]]],  a dictionary of frames,
+                                                                the key is the sensor id,
+                                                                the value is a dictionary of objects,
+                                                                the key is the object id,
+                                                                the value is a dictionary of axes,
+                                                                the key is the axis type,
+                                                                the value is the axis
+            frame_primitive: np.ndarray(np.float32, (4, 4)),    the primitive of the frame,
+                                                                the frame primitive is a 4 x 4 matrix,
+                                                                column-wise view [o, x, y, z],
+            world_frame_id: str,   the id of the world frame,
+                                the world frame is the frame you choose to remain stationary in the plot
+            frame_type: int,    the type of the frame, 1 for object frame, 2 for sensor frame
+        """
+        # check whether the world frame is sensor frame or object frame
+        frame_type_enum = FrameType(frame_type)
+        axis_length = 0.3
+        label_offset = 0.08
+        world2sensor = np.identity(4)
+        world2object = np.identity(4)
+        frame_pm_temp = frame_primitive.copy()
+
+        sCount = 0
+
+        if frame_type_enum == FrameType.OBJECT:
+            world_frame_id_prefix = "object" + "_" + world_frame_id
+
+            if world_frame_id_prefix not in self.nodes:
+                print(
+                    "The world frame "
+                    + world_frame_id_prefix
+                    + " is not in the graph, please check the input"
+                )
+                return
+
+            for sensor_prefix in self.sensor_id:
+                if sensor_prefix not in self.edges[world_frame_id_prefix]:
+                    continue  # skip the sensor if the edge connected to world is not in the graph
+
+                elif self.edges[world_frame_id_prefix][sensor_prefix][1] == False:
+                    continue  # skip the sensor if the edge connected to world is not active
+
+                elif self.edges[world_frame_id_prefix][sensor_prefix][1] == True:
+                    world2sensor[:, :] = self.edges[world_frame_id_prefix][
+                        sensor_prefix
+                    ][0]
+
+                    for object_prefix in self.edges[sensor_prefix]:
+                        if object_prefix == world_frame_id_prefix:
+                            continue  # skip the world frame itself
+
+                        if self.edges[sensor_prefix][object_prefix][1] == False:
+                            continue  # skip the object if the edge connected to the sensor is not active
+
+                        # update the frame primitive pose
+                        frame_pm_temp[:, :] = (
+                            world2sensor
+                            @ self.edges[sensor_prefix][object_prefix][0]
+                            @ frame_primitive
+                        )
+
+                        # update the frame
+                        frames[sensor_prefix][object_prefix]["x"].set_segments(
+                            [
+                                [
+                                    (
+                                        frame_pm_temp[0, 0],
+                                        frame_pm_temp[1, 0],
+                                        frame_pm_temp[2, 0],
+                                    ),
+                                    (
+                                        frame_pm_temp[0, 1],
+                                        frame_pm_temp[1, 1],
+                                        frame_pm_temp[2, 1],
+                                    ),
+                                ]
+                            ]
+                        )
+                        frames[sensor_prefix][object_prefix]["y"].set_segments(
+                            [
+                                [
+                                    (
+                                        frame_pm_temp[0, 0],
+                                        frame_pm_temp[1, 0],
+                                        frame_pm_temp[2, 0],
+                                    ),
+                                    (
+                                        frame_pm_temp[0, 2],
+                                        frame_pm_temp[1, 2],
+                                        frame_pm_temp[2, 2],
+                                    ),
+                                ]
+                            ]
+                        )
+                        frames[sensor_prefix][object_prefix]["z"].set_segments(
+                            [
+                                [
+                                    (
+                                        frame_pm_temp[0, 0],
+                                        frame_pm_temp[1, 0],
+                                        frame_pm_temp[2, 0],
+                                    ),
+                                    (
+                                        frame_pm_temp[0, 3],
+                                        frame_pm_temp[1, 3],
+                                        frame_pm_temp[2, 3],
+                                    ),
+                                ]
+                            ]
+                        )
+                        tag_position = np.column_stack(
+                            (
+                                frame_pm_temp[0, 1],
+                                frame_pm_temp[1, 1],
+                                frame_pm_temp[2, 1],
+                            )
+                        )
+
+                        frames[sensor_prefix][object_prefix][
+                            "sensor_tag"
+                        ]._offsets3d = (
+                            tag_position[:, 0] + label_offset * sCount,
+                            tag_position[:, 1],
+                            tag_position[:, 2],
+                        )
+                        frames[sensor_prefix][object_prefix]["sensor_tag"].set_alpha(
+                            1.0
+                        )
+
+                        frames[sensor_prefix][object_prefix]["frame_id"].set_position(
+                            [
+                                frame_pm_temp[0, 2],
+                                frame_pm_temp[1, 2],
+                            ]
+                        )
+                        frames[sensor_prefix][object_prefix][
+                            "frame_id"
+                        ].set_3d_properties(
+                            frame_pm_temp[2, 2] + axis_length + label_offset, zdir="x"
+                        )
+                        frames[sensor_prefix][object_prefix]["frame_id"].set_alpha(1.0)
+
+                sCount += 1
+
+        elif frame_type_enum == FrameType.SENSOR:
+            world_frame_id_prefix = "sensor" + "_" + world_frame_id
+
+            if world_frame_id_prefix not in self.nodes:
+                print(
+                    "The world frame "
+                    + world_frame_id_prefix
+                    + " is not in the graph, please check the input"
+                )
+                return
+
+            for object_prefix in self.object_id:
+                if object_prefix not in self.edges[world_frame_id_prefix]:
+                    continue
+
+                elif self.edges[world_frame_id_prefix][object_prefix][1] == False:
+                    continue
+
+                elif self.edges[world_frame_id_prefix][object_prefix][1] == True:
+                    world2object[:, :] = self.edges[world_frame_id_prefix][
+                        object_prefix
+                    ][0]
+
+                    # update the frame primitive pose
+                    frame_pm_temp[:, :] = world2object @ frame_primitive
+
+                    # update the frame
+                    frames[world_frame_id_prefix][object_prefix]["x"].set_segments(
+                        [
+                            [
+                                (
+                                    frame_pm_temp[0, 0],
+                                    frame_pm_temp[1, 0],
+                                    frame_pm_temp[2, 0],
+                                ),
+                                (
+                                    frame_pm_temp[0, 1],
+                                    frame_pm_temp[1, 1],
+                                    frame_pm_temp[2, 1],
+                                ),
+                            ]
+                        ]
+                    )
+                    frames[world_frame_id_prefix][object_prefix]["y"].set_segments(
+                        [
+                            [
+                                (
+                                    frame_pm_temp[0, 0],
+                                    frame_pm_temp[1, 0],
+                                    frame_pm_temp[2, 0],
+                                ),
+                                (
+                                    frame_pm_temp[0, 2],
+                                    frame_pm_temp[1, 2],
+                                    frame_pm_temp[2, 2],
+                                ),
+                            ]
+                        ]
+                    )
+                    frames[world_frame_id_prefix][object_prefix]["z"].set_segments(
+                        [
+                            [
+                                (
+                                    frame_pm_temp[0, 0],
+                                    frame_pm_temp[1, 0],
+                                    frame_pm_temp[2, 0],
+                                ),
+                                (
+                                    frame_pm_temp[0, 3],
+                                    frame_pm_temp[1, 3],
+                                    frame_pm_temp[2, 3],
+                                ),
+                            ]
+                        ]
+                    )
+                    tag_position = np.column_stack(
+                        (
+                            frame_pm_temp[0, 1],
+                            frame_pm_temp[1, 1],
+                            frame_pm_temp[2, 1],
+                        )
+                    )
+
+                    frames[world_frame_id_prefix][object_prefix][
+                        "sensor_tag"
+                    ]._offsets3d = (
+                        tag_position[:, 0] + label_offset * sCount,
+                        tag_position[:, 1],
+                        tag_position[:, 2],
+                    )
+                    frames[world_frame_id_prefix][object_prefix][
+                        "sensor_tag"
+                    ].set_alpha(1.0)
+
+                    frames[world_frame_id_prefix][object_prefix][
+                        "frame_id"
+                    ].set_position(
+                        [
+                            frame_pm_temp[0, 0],
+                            frame_pm_temp[1, 0],
+                        ]
+                    )
+                    frames[world_frame_id_prefix][object_prefix][
+                        "frame_id"
+                    ].set_3d_properties(
+                        frame_pm_temp[2, 0] + axis_length + label_offset, zdir="x"
+                    )
+                    frames[world_frame_id_prefix][object_prefix]["frame_id"].set_alpha(
+                        1.0
+                    )
+            sCount += 1
+
+        else:
+            raise RuntimeError("frame type error when visualizing the graph")
+
+        return
+
+    def transform_vec(homogeneous_matrix: np.ndarray, point: np.ndarray) -> np.ndarray:
+        """
+        Transform a point using a homogeneous matrix
+
+        Args:
+        ----------
+            homogeneous_matrix: np.ndarray(np.float32, (4, 4)), homogeneous matrix
+            point: np.ndarray(np.float32, (4, 1)) or np.ndarray(np.float32, (1, 4)),
+                        homogeneous form of the point to be transformed
+
+        Return:
+        ----------
+            transformed_point: np.ndarray(np.float32, (4, 1)), transformed point
+        """
+        if point.shape == (4, 1):
+            pass
+        elif point.shape == (1, 4):
+            point = point.T
+        else:
+            raise RuntimeError(
+                "Unexpected error when transforming the point, please check the input"
+            )
+
+        transformed_point = homogeneous_matrix @ point
+
+        return transformed_point
 
 
 if __name__ == "__main__":
