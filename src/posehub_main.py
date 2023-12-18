@@ -19,8 +19,9 @@ def main(args):
     # initialize the pose graph
     pose_graph = PoseGraph()
 
-    plt.ion()
     figure = plt.figure()
+    plt.ion()
+    plt.show()
 
     ax = figure.add_subplot(projection="3d")
 
@@ -69,8 +70,7 @@ def main(args):
 
     pose_graph.add_sensor("h1")
     pose_graph.add_sensor("h2")
-    plt.show()
-    # i = 0
+
     try:
         while True:
             # Running the main loop
