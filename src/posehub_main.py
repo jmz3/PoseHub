@@ -19,9 +19,11 @@ def main(args):
     # initialize the pose graph
     pose_graph = PoseGraph()
 
-    # plt.ion()
-    # figure = plt.figure()
-    # ax = figure.add_subplot(projection="3d")
+    figure = plt.figure()
+    plt.ion()
+    plt.show()
+
+    ax = figure.add_subplot(projection="3d")
 
     tool_1_id = args.sub_topic[0]
     tool_2_id = args.sub_topic[1]
@@ -66,10 +68,9 @@ def main(args):
     zmq_manager_1.initialize()
     zmq_manager_2.initialize()
 
-    # pose_graph.add_sensor("h1")
-    # pose_graph.add_sensor("h2")
-    # plt.show()
-    # i = 0
+    pose_graph.add_sensor("h1")
+    pose_graph.add_sensor("h2")
+
     try:
         while True:
             # Running the main loop
@@ -101,17 +102,16 @@ def main(args):
                 if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
                     zmq_manager_2.send_poses(topic, pose)
 
-            # # visualize the poses
-            # start_time = time.time()
-            # pose_graph.viz_graph(
-            #     ax=ax, world_frame_id="tool_3", axis_limit=1.0, frame_type="object"
-            # )
-            
-            # plt.pause(0.001)
-            # plt.draw()
-            # print("Time for visualization: ", time.time() - start_time)
-            
-            
+            # visualize the poses
+            start_time = time.time()
+            pose_graph.viz_graph(
+                ax=ax, world_frame_id="h1", axis_limit=1.0, frame_type="sensor"
+            )
+
+            plt.pause(0.001)
+            plt.draw()
+            print("Time for visualization: ", time.time() - start_time)
+
             # # test update poses
             # try:
             #     tool1_pose = poseinfo_sensor1["tool_1"][0]
@@ -128,6 +128,7 @@ def main(args):
         zmq_manager_1.terminate()
         zmq_manager_2.terminate()
         plt.ioff()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
