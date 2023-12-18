@@ -1,10 +1,47 @@
 # PoseHub
-PoseHub is a library that manages the transformations of different sensors and objects in the same scene and provides a unified interface for accessing them. For the purpose of simplification, this package only depends on the [numpy](https://numpy.org/) package. The package is designed to be used in the [AR Project, Surgical Tool Tracking using Multi-Sensor System]()
+PoseHub is a library that manages the transformations of different sensors and objects in the same scene and provides a unified interface for accessing them. For the purpose of simplification, this package only depends on the [numpy](https://numpy.org/) and [matplotlib]() package. The package is designed to be used in the [AR Project, Surgical Tool Tracking using Multi-Sensor System]()
 
 ## Installation
 
 ```bash
 git clone https://github.com/jmz3/PoseHub.git
+```
+
+## Usage
+Open a terminal and run the following command to start the ZMQ server.
+Note that you need to modify the IP address in the `posehub_main.py` file to the IP address of your sensor (either HoloLens or something else).
+```bash
+```bash
+python3 posehub_main.py
+```
+
+If you have multiple sensors, you can copy the following code snippet and modify the args to create multiple communication objects.
+```python
+args_1 = argparse.Namespace(
+    sub_ip=args.sub_ip_1,
+    sub_port="5588",
+    pub_port="5589",
+    sub_topic=[tool_1_id, tool_2_id, tool_3_id],
+    pub_topic=[tool_1_id, tool_2_id, tool_3_id],
+    sensor_name=sensor_1_id,
+)  # args for h1 sensor
+
+# create zmq manager
+zmq_manager_1 = ZMQManager(
+    sub_ip=args_1.sub_ip,
+    sub_port=args_1.sub_port,
+    pub_port=args_1.pub_port,
+    sub_topic=args_1.sub_topic,
+    pub_topic=args_1.pub_topic,
+    sensor_name=args_1.sensor_name,
+)
+
+# initialize zmq manager
+zmq_manager_1.initialize() 
+
+# create pose graph object to store the transformation
+pose_graph = PoseGraph()
+pose_graph.add_sensor("h1")
 ```
 
 ## Data Structure

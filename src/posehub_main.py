@@ -3,11 +3,12 @@ from typing import Type, Dict, List, Optional
 from comm.ZMQManager import ZMQManager
 from pose_graph import PoseGraph
 import argparse
-import threading
 import time
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 import matplotlib.pyplot as plt
+from visualize.viz_frames import axis_init
+from visualize.viz_frames import generate_frames
 
 
 def main(args):
@@ -19,15 +20,45 @@ def main(args):
     # initialize the pose graph
     pose_graph = PoseGraph()
 
-    # figure = plt.figure()
-    # plt.ion()
-    # plt.show()
-
-    # ax = figure.add_subplot(projection="3d")
+    # initialize the visualization code snippet
+    figure = plt.figure()
+    plt.ion()
+    plt.show()
+    ax = figure.add_subplot(projection="3d")
+    ax = axis_init(ax, 1.0, "Pose")
 
     tool_1_id = args.sub_topic[0]
     tool_2_id = args.sub_topic[1]
     tool_3_id = args.sub_topic[2]
+
+    sensor_1_id = "h1"
+    sensor_2_id = "h2"
+
+    frames, frame_pm = generate_frames(
+        ax=ax,
+        sensors=[sensor_1_id, sensor_2_id],
+        objects=[tool_1_id, tool_2_id, tool_3_id],
+        axis_length=0.3,
+    )  # generate the frames for visualization,
+    # the number of frames is equal to the number of sensors * objects
+    # frames is a dictionary with the following structure:
+    # frames = {
+    #     "sensor_1": {
+    #         "tool_1": {
+    #             "x": None,
+    #             "y": None,
+    #             "z": None,
+    #             "sensor_tag": None,
+    #             "frame_id": None,
+    #         },
+    #         "tool_2": {
+    #             ...
+    #         },
+    #        ...
+    #     },
+    #    ...
+    # }
+    # frame_pm is a (4x4) ndarray, containing 1 origin point and 3 axes end-point of the frames
 
     args_1 = argparse.Namespace(
         sub_ip=args.sub_ip_1,
@@ -35,7 +66,7 @@ def main(args):
         pub_port="5589",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
         pub_topic=[tool_1_id, tool_2_id, tool_3_id],
-        sensor_name="h1",
+        sensor_name=sensor_1_id,
     )  # args for h1 sensor
 
     args_2 = argparse.Namespace(
@@ -44,7 +75,7 @@ def main(args):
         pub_port="5581",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
         pub_topic=[tool_1_id, tool_2_id, tool_3_id],
-        sensor_name="h2",
+        sensor_name=sensor_2_id,
     )  # args for h2 sensor
 
     zmq_manager_1 = ZMQManager(
@@ -102,15 +133,18 @@ def main(args):
                 if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
                     zmq_manager_2.send_poses(topic, pose)
 
-            # # visualize the poses
-            # start_time = time.time()
-            # pose_graph.viz_graph(
-            #     ax=ax, world_frame_id="h1", axis_limit=1.0, frame_type="sensor"
-            # )
+            # visualize the poses
+            start_time = time.time()
+            # pose_graph.viz_graph(ax=ax, world_frame_id="h1", frame_type=2)
+            pose_graph.viz_graph_update(
+                frames=frames,
+                frame_primitive=frame_pm,
+                world_frame_id="h1",
+                frame_type=2,
+            )
 
-            # plt.pause(0.001)
-            # plt.draw()
-            # print("Time for visualization: ", time.time() - start_time)
+            plt.pause(0.001)
+            print("Time for visualization: ", time.time() - start_time)
 
             # # # test update poses
             # try:
