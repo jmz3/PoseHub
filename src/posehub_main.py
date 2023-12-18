@@ -20,10 +20,10 @@ def main(args):
     # initialize the pose graph
     pose_graph = PoseGraph()
 
+    # initialize the visualization code snippet
     figure = plt.figure()
     plt.ion()
     plt.show()
-
     ax = figure.add_subplot(projection="3d")
     ax = axis_init(ax, 1.0, "Pose")
 
@@ -135,11 +135,15 @@ def main(args):
 
             # visualize the poses
             start_time = time.time()
-            # pose_graph.viz_graph(ax=ax, world_frame_id="h1", frame_type="sensor")
-            viz_graph(ax=ax, frames=frames, world_frame_id="h1", frame_type="sensor")
+            # pose_graph.viz_graph(ax=ax, world_frame_id="h1", frame_type=2)
+            pose_graph.viz_graph_update(
+                frames=frames,
+                frame_primitive=frame_pm,
+                world_frame_id="h1",
+                frame_type=2,
+            )
 
             plt.pause(0.001)
-            plt.draw()
             print("Time for visualization: ", time.time() - start_time)
 
             # # test update poses
