@@ -24,7 +24,7 @@ def main(args):
     plt.show()
 
     ax = figure.add_subplot(projection="3d")
-    ax = axis_init(ax, 1.0, "3D plot")
+    ax = axis_init(ax, 1.0, "Pose")
 
     tool_1_id = args.sub_topic[0]
     tool_2_id = args.sub_topic[1]
@@ -104,9 +104,7 @@ def main(args):
 
             # visualize the poses
             start_time = time.time()
-            pose_graph.viz_graph(
-                ax=ax, world_frame_id="h1", axis_limit=1.0, frame_type="sensor"
-            )
+            pose_graph.viz_graph(ax=ax, world_frame_id="h1", frame_type="sensor")
 
             plt.pause(0.001)
             plt.draw()

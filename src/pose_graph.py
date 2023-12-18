@@ -323,14 +323,6 @@ class PoseGraph:
         # display frequency is up to 100Hz
 
         # clear the plot
-        ax.cla()
-        ax.set_xlabel("X", fontsize=12)
-        ax.set_ylabel("Y", fontsize=12)
-        ax.set_zlabel("Z", fontsize=12)
-        ax.set_xlim(-axis_limit, axis_limit)
-        ax.set_ylim(-axis_limit, axis_limit)
-        ax.set_zlim(-axis_limit, axis_limit)
-        ax.set_title("Pose Graph", fontsize=20)
 
         # define the marker styles and colors
         marker_styles = [
