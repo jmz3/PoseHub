@@ -19,11 +19,11 @@ def main(args):
     # initialize the pose graph
     pose_graph = PoseGraph()
 
-    figure = plt.figure()
-    plt.ion()
-    plt.show()
+    # figure = plt.figure()
+    # plt.ion()
+    # plt.show()
 
-    ax = figure.add_subplot(projection="3d")
+    # ax = figure.add_subplot(projection="3d")
 
     tool_1_id = args.sub_topic[0]
     tool_2_id = args.sub_topic[1]
@@ -68,8 +68,8 @@ def main(args):
     zmq_manager_1.initialize()
     zmq_manager_2.initialize()
 
-    pose_graph.add_sensor("h1")
-    pose_graph.add_sensor("h2")
+    # pose_graph.add_sensor("h1")
+    # pose_graph.add_sensor("h2")
 
     try:
         while True:
@@ -86,8 +86,8 @@ def main(args):
             if len(poseinfo_sensor2) != 0:
                 pose_graph.update_graph("h2", poseinfo_sensor2)
                 # print("poseinfo: ", poseinfo_sensor2)
-            # else:
-            #     print("poseinfo_sensor2 is empty")
+            else:
+                print("poseinfo_sensor2 is empty")
             # print("Time for pose graph update: ", time.time() - start_time)
             # # send messages
             for topic in args_1.pub_topic:
@@ -102,23 +102,22 @@ def main(args):
                 if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
                     zmq_manager_2.send_poses(topic, pose)
 
-            # visualize the poses
-            start_time = time.time()
-            pose_graph.viz_graph(
-                ax=ax, world_frame_id="h1", axis_limit=1.0, frame_type="sensor"
-            )
+            # # visualize the poses
+            # start_time = time.time()
+            # pose_graph.viz_graph(
+            #     ax=ax, world_frame_id="h1", axis_limit=1.0, frame_type="sensor"
+            # )
 
-            plt.pause(0.001)
-            plt.draw()
-            print("Time for visualization: ", time.time() - start_time)
+            # plt.pause(0.001)
+            # plt.draw()
+            # print("Time for visualization: ", time.time() - start_time)
 
-            # # test update poses
+            # # # test update poses
             # try:
             #     tool1_pose = poseinfo_sensor1["tool_1"][0]
             #     print(tool1_pose[:3,3],Rot.from_matrix(tool1_pose[:3,:3]).as_quat())
             #     move = np.identity(4)
             #     move[:3,:3] = Rot.from_euler("zxy", [20, 55, 36], degrees=True).as_matrix()
-            #     print(move[:3,:3])
             #     move[:3,3] = np.array([0.01, 0.02, 0.03])
             #     zmq_manager_1.send_poses("tool_2", tool1_pose@move)
             # except:

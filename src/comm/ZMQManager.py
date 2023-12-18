@@ -67,7 +67,7 @@ class ZMQManager:
                     self.update_SubPoses(topic.decode("utf-8"), message.decode("utf-8"))
                     # print(f"{topic.decode('utf-8')}: {message.decode('utf-8')}")
                 except zmq.Again:
-                    print("No message received within our timeout period")
+                    print(f"{self.sensor_name}: No message received within our timeout period")
                 except KeyboardInterrupt:
                     self.connected = False
             else:
@@ -190,7 +190,6 @@ class ZMQManager:
         # Convert to string
         new_pose_str = ",".join(str(num) for num in new_pose.flatten())
         self.pub_messages[topic] = new_pose_str + ',1'
-        
         # pub_message_on_topic = ""
         # position = transform_mtx[:3, 3]
         # quaternion = Rot.from_matrix(transform_mtx[:3, :3]).as_quat()
