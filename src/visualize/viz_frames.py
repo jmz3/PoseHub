@@ -1,33 +1,146 @@
-import matplotlib.pyplot as plt
 import numpy as np
-import zmq
+from typing import List
+from matplotlib import pyplot as plt
 
 
-class MessageSubscriber:
-    def __init__(self, sub_ips, sub_ports, sub_topics):
-        self.sub_ips = sub_ips
-        self.sub_ports = sub_ports
-        self.sub_topics = sub_topics
+def axis_init(ax, limit: float, title: str = "3D plot"):
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
+    ax.set_xlim(-limit, limit)
+    ax.set_ylim(-limit, limit)
+    ax.set_zlim(-limit, limit)
+    ax.set_title(title, fontsize=20)
 
-    def subscribe(self):
-        # Subscribe to the ZMQ publisher
-        context = zmq.Context()
-        socket = context.socket(zmq.SUB)
-        socket.connect(f"tcp://{self.sub_ips[0]}:{self.sub_ports[0]}")
-        # Initialize the plot
-        socket.setsockopt(zmq.RCVTIMEO, 1000)
-
-        if isinstance(self.sub_topics[0], str):
-            self.sub_topics[0] = self.sub_topics[0].encode()
+    return ax
 
 
-# Usage example
-if __name__ == "__main__":
-    # Initialize the subscriber
-    sub_ips = ["192.168.1.1", "192.168.1.0"]
-    sub_ports = ["5588", "5589"]
-    sub_topics = ["tool_1", "tool_2", "tool_3"]
-    subscriber = MessageSubscriber(
-        sub_ips=sub_ips, sub_ports=sub_ports, sub_topics=sub_topics
-    )
-    subscriber.subscribe()
+def generate_frames(
+    ax: plt.Axes, sensors: List[str], objects: List[str], axis_length=1.0
+):
+    """
+    Generate frames for visualization
+    the number of frames is equal to the number of sensors * objects
+
+    Args:
+    ----------
+    ax: plt.Axes
+        The axis for visualization
+    sensors: List[str]
+        The list of sensor names
+    objects: List[str]
+        The list of object names
+    axis_length: float
+        The length of the axis
+
+
+    Returns:
+    ----------
+    frame: dict
+        The dictionary containing the frames for visualization
+    frame_primitive: np.ndarray
+        The primitive axis for visualization
+    """
+    frame = dict()
+
+    # add prefix to the sensor and object names
+    sensors = ["sensor_" + sensor for sensor in sensors]
+    objects = ["object_" + obj for obj in objects]
+
+    # Initialize the frames with empty values
+    for sensor in sensors:
+        frame[sensor] = {}  # Initialize nested dictionary for each sensor
+        for obj in objects:
+            frame[sensor][obj] = {
+                "x": None,
+                "y": None,
+                "z": None,
+                "sensor_tag": None,
+                "frame_id": None,
+            }
+
+    marker_styles = [
+        "o",
+        "s",
+        "^",
+        "v",
+        "*",
+        "+",
+        "x",
+        "D",
+        "|",
+        "_",
+    ]  # 10 styles, can be extended if needed
+    marker_colors = [
+        "r",
+        "g",
+        "b",
+        "c",
+        "m",
+        "y",
+        "k",
+        "w",
+    ]  # 8 colors, can be extended if needed
+
+    sCount = 0
+    for sensor in sensors:
+        for obj in objects:
+            frame[sensor][obj] = {
+                "x": ax.quiver(
+                    0, 0, 0, axis_length, 0, 0, color="r", arrow_length_ratio=0.2
+                ),
+                "y": ax.quiver(
+                    0, 0, 0, 0, axis_length, 0, color="g", arrow_length_ratio=0.2
+                ),
+                "z": ax.quiver(
+                    0, 0, 0, 0, 0, axis_length, color="b", arrow_length_ratio=0.2
+                ),
+                "sensor_tag": ax.scatter(
+                    0,
+                    0,
+                    0,
+                    marker=marker_styles[sCount % len(marker_styles)],
+                    color=marker_colors[sCount % len(marker_colors)],
+                    s=50,
+                    alpha=0,  # invisible at first
+                ),
+                "frame_id": ax.text(
+                    0, 0, 0, obj, color="black", fontsize=10, alpha=0
+                ),  # invisible at first
+            }
+
+        sCount += 1
+
+    frame["world"] = {}
+    frame["world"]["world"] = {
+        "x": ax.quiver(0, 0, 0, axis_length, 0, 0, color="r", arrow_length_ratio=0.2),
+        "y": ax.quiver(0, 0, 0, 0, axis_length, 0, color="g", arrow_length_ratio=0.2),
+        "z": ax.quiver(0, 0, 0, 0, 0, axis_length, color="b", arrow_length_ratio=0.2),
+        "sensor_tag": ax.scatter(
+            0,
+            0,
+            0,
+            marker=marker_styles[sCount % len(marker_styles)],
+            color=marker_colors[sCount % len(marker_colors)],
+            s=50,
+            alpha=0,  # invisible at first
+        ),
+        "frame_id": ax.text(
+            0, 0, 0, "World", color="black", fontsize=10, alpha=1
+        ),  # invisible at first
+    }
+
+    frame_primitive = np.transpose(
+        np.array(
+            [
+                [0, 0, 0, 1],  # origin
+                [axis_length, 0, 0, 1],  # x-axis
+                [0, axis_length, 0, 1],  # y-axis
+                [0, 0, axis_length, 1],  # z-axis
+            ],
+            dtype=np.float32,
+        )
+    )  # 4 x 4 matrix, column-wise view [o, x, y, z],
+    # each column is a point for a primitive axis, we need 4 points to define a frame (origin + 3 axes)
+
+    return frame, frame_primitive
