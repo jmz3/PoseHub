@@ -331,6 +331,8 @@ class PoseGraph:
         ax.set_ylim(-axis_limit, axis_limit)
         ax.set_zlim(-axis_limit, axis_limit)
         ax.set_title("Pose Graph", fontsize=20)
+
+        # define the marker styles and colors
         marker_styles = [
             "o",
             "s",
@@ -519,7 +521,9 @@ class PoseGraph:
         # apply transformation to the frame
 
         # print(y_axis)
-        ax.legend(loc="best", fontsize=12)
+        ax.legend(
+            handles=scatter, loc="best", fontsize=12, fancybox=True
+        )  # show legend, one legend for each sensor
         # print(transform)
 
 

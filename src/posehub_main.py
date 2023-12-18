@@ -3,11 +3,11 @@ from typing import Type, Dict, List, Optional
 from comm.ZMQManager import ZMQManager
 from pose_graph import PoseGraph
 import argparse
-import threading
 import time
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 import matplotlib.pyplot as plt
+from visualize.viz_frames import axis_init
 
 
 def main(args):
@@ -19,10 +19,12 @@ def main(args):
     # initialize the pose graph
     pose_graph = PoseGraph()
 
-    plt.ion()
     figure = plt.figure()
+    plt.ion()
+    plt.show()
 
     ax = figure.add_subplot(projection="3d")
+    ax = axis_init(ax, 1.0, "3D plot")
 
     tool_1_id = args.sub_topic[0]
     tool_2_id = args.sub_topic[1]
@@ -69,8 +71,7 @@ def main(args):
 
     pose_graph.add_sensor("h1")
     pose_graph.add_sensor("h2")
-    plt.show()
-    # i = 0
+
     try:
         while True:
             # Running the main loop
