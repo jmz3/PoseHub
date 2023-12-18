@@ -144,8 +144,16 @@ class ZMQManager:
                         [float(x) for x in received_dict[topic].split(",")]
                     )
                     pose_mtx = np.identity(4)
+                    # x,y,z,w = twist[3:7]
+                    # pose_mtx[:3, :3] = Rot.from_quat([-x,-y,-z,w]).as_matrix()
                     pose_mtx[:3, :3] = Rot.from_quat(twist[3:7]).as_matrix()
-                    pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
+                    pose_mtx[:3, 3] = np.array([twist[0], twist[1], twist[2]])
+                    # # convert to cv convention
+                    # pose_mtx[0,2] *= -1
+                    # pose_mtx[1,2] *= -1
+                    # pose_mtx[2,0] *= -1
+                    # pose_mtx[2,1] *= -1
+                    # pose_mtx[2,3] *= -1
                     tool_info[topic] = [
                         pose_mtx,
                         twist[7] == 1,
@@ -166,12 +174,19 @@ class ZMQManager:
         if transform_mtx.shape != (4, 4):
             print("The size of the transformation matrix is not 4x4")
             return
-        
+        # # convert to unity convention
+        # transform_mtx[0,2] *= -1
+        # transform_mtx[1,2] *= -1
+        # transform_mtx[2,0] *= -1
+        # transform_mtx[2,1] *= -1
+        # transform_mtx[2,3] *= -1
         quat = Rot.from_matrix(transform_mtx[:3, :3]).as_quat().reshape(1, -1)
         trans = transform_mtx[:3, 3].reshape(1, -1)
         new_pose = np.hstack([trans, quat])
         # Change to unity convention
-        new_pose[:,2] *= -1
+        # new_pose[:,2] *= -1
+        # new_pose[:,3] *= -1
+        # new_pose[:,4] *= -1
         # Convert to string
         new_pose_str = ",".join(str(num) for num in new_pose.flatten())
         self.pub_messages[topic] = new_pose_str + ',1'

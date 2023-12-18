@@ -162,7 +162,7 @@ class PoseGraph:
         sensor_id_prefix = "sensor_" + sensor_id
 
         if sensor_id_prefix not in self.sensor_id:
-            print(sensor_id_prefix + " is not in the graph, add it to the graph ... ")
+            # print(sensor_id_prefix + " is not in the graph, add it to the graph ... ")
             # self.add_sensor(sensor_id, poses)
             self.add_sensor(sensor_id, poses)
             return
@@ -186,11 +186,11 @@ class PoseGraph:
                 except KeyError:
                     # Tackle the case when the object is not in the graph
                     # TODO: add the object to the graph
-                    print(
-                        "The object",
-                        object_id_prefix,
-                        " is not in the graph, add it to the graph ... ",
-                    )
+                    # print(
+                    #     "The object",
+                    #     object_id_prefix,
+                    #     " is not in the graph, add it to the graph ... ",
+                    # )
                     for object_id, (transformation, isActive) in poses.items():
                         object_id_prefix = "object_" + object_id
                         if object_id_prefix not in self.object_id:
@@ -227,15 +227,15 @@ class PoseGraph:
         child_id = "object_" + child_id
 
         if parent_id not in self.sensor_id:
-            print(
-                "The parent node is not in the graph,\nPlease check the input or add the node to the graph"
-            )
+            # print(
+            #     "The parent node is not in the graph,\nPlease check the input or add the node to the graph"
+            # )
             return None
 
         if child_id not in self.object_id:
-            print(
-                "The child node is not in the graph,\nPlease check the input or add the node to the graph"
-            )
+            # print(
+            #     "The child node is not in the graph,\nPlease check the input or add the node to the graph"
+            # )
             return None
 
         if (
@@ -264,7 +264,7 @@ class PoseGraph:
                 return None
 
             else:
-                print("The path between the parent node and the child node is: ", path)
+                # print("The path between the parent node and the child node is: ", path)
                 for idx in range(len(path) - 1):
                     # print(transform)
 
@@ -352,11 +352,11 @@ class PoseGraph:
         world_frame_id = frame_type + "_" + world_frame_id
 
         if world_frame_id not in self.nodes:
-            print(
-                "The world frame "
-                + world_frame_id
-                + " is not in the graph, please check the input"
-            )  # do not plot if the world frame is not in the graph
+            # print(
+            #     "The world frame "
+            #     + world_frame_id
+            #     + " is not in the graph, please check the input"
+            # )  # do not plot if the world frame is not in the graph
             return
 
         if len(self.edges) == 0 or len(self.nodes) == 1:  # if the graph has no edges:
