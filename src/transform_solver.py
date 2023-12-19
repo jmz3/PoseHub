@@ -24,8 +24,8 @@ class TransformSolver:
                                         ...}
 
         """
-        self.nodes = nodes
-        self.edges = edges
+        self.nodes = nodes.copy()
+        self.edges = edges.copy()
 
         for node in self.nodes:
             self.edges[node] = {

@@ -167,7 +167,6 @@ class PoseGraph:
         sensor_id_prefix = "sensor_" + sensor_id
 
         if sensor_id_prefix not in self.sensor_id:
-            # print(sensor_id_prefix + " is not in the graph, add it to the graph ... ")
             # self.add_sensor(sensor_id, poses)
             self.add_sensor(sensor_id, poses)
             return
@@ -224,7 +223,7 @@ class PoseGraph:
                 #     print("object id: ", object_id_prefix)
                 #     print("sensor id: ", sensor_id_prefix)
 
-                #     print("edges: ", self.edges[sensor_id_prefix][object_id_prefix])
+                    # print("edges: ", self.edges[sensor_id_prefix][object_id_prefix])
                 # print("edge id: ", self.edges[sensor_id_prefix])
 
                 # Tackle the case when the object is not in the graph

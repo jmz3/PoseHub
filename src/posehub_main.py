@@ -72,8 +72,8 @@ def main(args):
 
     args_2 = argparse.Namespace(
         sub_ip=args.sub_ip_2,
-        sub_port="5588",
-        pub_port="5589",
+        sub_port="5581",
+        pub_port="5580",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
         pub_topic=[tool_1_id, tool_2_id, tool_3_id],
         sensor_name=sensor_2_id,
@@ -113,7 +113,6 @@ def main(args):
 
             # print("sensor id: ", pose_graph.sensor_id)
             # print("object id: ", pose_graph.object_id)
-            print("edge id: ", pose_graph.edges)
             if len(poseinfo_sensor1) != 0:
                 pose_graph.update_graph("h1", poseinfo_sensor1)
             else:
@@ -124,25 +123,28 @@ def main(args):
                 # print("poseinfo: ", poseinfo_sensor2)
             else:
                 print("poseinfo_sensor2 is empty")
-            else:
-                print("poseinfo_sensor2 is empty")
+
             # print("Time for pose graph update: ", time.time() - start_time)
             # # send messages
+
             for topic in args_1.pub_topic:
                 # transfer the topic from bytes to string
 
                 pose = pose_graph.get_transform("h1", topic, solver_method="BFS")
                 # print("calculated pose: ", pose)
-                # if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
-                if pose is not None:
+                if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
+                # if pose is not None:
                     zmq_manager_1.send_poses(topic, pose)
 
             for topic in args_2.pub_topic:
                 # transfer the topic from bytes to string
+                
                 pose = pose_graph.get_transform("h2", topic, solver_method="BFS")
+                # print("calculated pose: ", pose)
                 if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
                     zmq_manager_2.send_poses(topic, pose)
 
+            print("edges after graph search: ", pose_graph.edges)
             # visualize the poses
             # start_time = time.time()
             # pose_graph.viz_graph(ax=ax, world_frame_id="h1", frame_type=2)
@@ -158,12 +160,12 @@ def main(args):
 
             # # test update poses
             try:
-                tool1_pose = poseinfo_sensor1["tool_1"][0]
+                tool1_pose = poseinfo_sensor1["artool"][0]
                 print(tool1_pose[:3,3],Rot.from_matrix(tool1_pose[:3,:3]).as_quat())
                 move = np.identity(4)
                 move[:3,:3] = Rot.from_euler("zxy", [20, 55, 36], degrees=True).as_matrix()
                 move[:3,3] = np.array([0.01, 0.02, 0.03])
-                zmq_manager_1.send_poses("tool_2", tool1_pose@move)
+                zmq_manager_1.send_poses("phantom", tool1_pose@move)
             except:
                 pass
 
@@ -180,8 +182,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sub_ip_1",
-        default="10.203.59.134",
-        # default="10.203.72.192",
+        # default="10.203.59.134",
+        default="10.203.192.59",
         type=str,
         help="subscriber ip address sensor 1",
     )
