@@ -147,8 +147,10 @@ class ZMQManager:
                     pose_mtx = np.identity(4)
                     # x,y,z,w = twist[3:7]
                     # pose_mtx[:3, :3] = Rot.from_quat([-x,-y,-z,w]).as_matrix()
-                    pose_mtx[:3, :3] = Rot.from_quat(twist[3:7]).as_matrix()
-                    pose_mtx[:3, 3] = np.array([twist[0], twist[1], twist[2]])
+                    quat_right = np.array([twist[3], twist[4], -twist[5], twist[6]])
+
+                    pose_mtx[:3, :3] = Rot.from_quat(quat_right).as_matrix()
+                    pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
                     # # convert to cv convention
                     # pose_mtx[0,2] *= -1
                     # pose_mtx[1,2] *= -1
@@ -176,14 +178,15 @@ class ZMQManager:
             print("The size of the transformation matrix is not 4x4")
             return
         # # convert to unity convention
-        # transform_mtx[0,2] *= -1
-        # transform_mtx[1,2] *= -1
-        # transform_mtx[2,0] *= -1
-        # transform_mtx[2,1] *= -1
-        # transform_mtx[2,3] *= -1
-        quat = Rot.from_matrix(transform_mtx[:3, :3]).as_quat().reshape(1, -1)
-        trans = transform_mtx[:3, 3].reshape(1, -1)
-        new_pose = np.hstack([trans, quat])
+        # quat_right =
+        quat_right = Rot.from_matrix(transform_mtx[:3, :3]).as_quat().reshape(1, -1)
+        quat_left = quat_right
+        quat_left[:, 2] *= -1
+        trans_right = transform_mtx[:3, 3].reshape(1, -1)
+        trans_left = trans_right
+        trans_left[:, 2] *= -1
+
+        new_pose = np.hstack([trans_left, quat_left])
         # Change to unity convention
         # new_pose[:,2] *= -1
         # new_pose[:,3] *= -1
