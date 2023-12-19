@@ -138,6 +138,7 @@ class ZMQManager:
                 if len(received_dict[topic].split(",")) < 7:
                     # means no pose received
                     # print(f'{topic}',received_dict[topic])
+                    tool_info[topic] = [np.identity(4), False]
                     continue
                 else:
                     twist = np.array(
@@ -189,43 +190,5 @@ class ZMQManager:
         # new_pose[:,4] *= -1
         # Convert to string
         new_pose_str = ",".join(str(num) for num in new_pose.flatten())
-        self.pub_messages[topic] = new_pose_str + ',1'
-        
-        # pub_message_on_topic = ""
-        # position = transform_mtx[:3, 3]
-        # quaternion = Rot.from_matrix(transform_mtx[:3, :3]).as_quat()
-
-        # # encode the transformation matrix into a string
-        # # the string is in the order of [x, y, z, w, x, y, z, isActive], separated by commas
-        # pub_message_on_topic += f"{position[0]},{position[1]},{-position[2]},"
-        # pub_message_on_topic += f"{quaternion[0]},{quaternion[1]},{quaternion[2]},{quaternion[3]},"  # the quaternion is in the order of x,y,z,w
-        # pub_message_on_topic += (
-        #     f"1"  # isActive since we are sending the calculated poses
-        # )
-
-        # self.pub_messages[topic] = pub_message_on_topic
-
-    # def run(self):
-    #     self.connected = True
-    #     pub_thread = threading.Thread(target=self.publisher_thread)
-    #     sub_thread = threading.Thread(target=self.subscriber_thread)
-    #     sub_thread.start()
-    #     pub_thread.start()
-
-    #     try:
-    #         while True:
-    #             pass
-    #     except KeyboardInterrupt:
-    #         self.connected = False
-    #         time.sleep(0.1)
-    #         print("Main thread interrupted, cleaning up...")
-    #         sub_thread.join()
-    #         pub_thread.join()
-
-
-# if __name__ == "__main__":
-#     global posegraph = PoseGraph()
-
-#     hl1_manager = ZMQManager("")
-#     hl1_manager.run()
-#     hl1_manager.msg
+        self.pub_messages[topic] = new_pose_str + ",1"
+        print("Sending message: ", self.pub_messages[topic])
