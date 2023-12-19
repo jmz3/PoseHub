@@ -69,8 +69,10 @@ class PoseGraph:
             isActive: bool, indicate if the transformation is active
         """
         if parent_id not in self.edges:
+            print("create parent node in edges: ", parent_id)
             self.edges[parent_id] = {}
         if child_id not in self.edges:
+            print("create child node in edges: ", child_id)
             self.edges[child_id] = {}
 
         self.edges[parent_id][child_id] = [transformation, isActive]
@@ -113,28 +115,25 @@ class PoseGraph:
             # for pose in poses.items():
             # check if the object_id is already in the graph,
             # if not, add it to the graph
-            # object_id_prefix = "object_" + pose[0]
-            # if object_id_prefix not in self.object_id:
-            #     self.add_object(pose[0])
-
-            # # add the edge between the sensor and the object
-            # self._add_edge(
-            #     sensor_id_prefix,
-            #     object_id_prefix,
-            #     transformation=pose[1][0],
-            #     isActive=pose[1][1],
-            # )
-            for object_id, (transformation, isActive) in poses.items():
+            for object_id in poses.keys():
                 object_id_prefix = "object_" + object_id
                 if object_id_prefix not in self.object_id:
                     self.add_object(object_id)
 
-                self._add_edge(
-                    sensor_id_prefix,
-                    object_id_prefix,
-                    transformation=transformation,
-                    isActive=isActive,
-                )
+                if len(poses[object_id]) == 0:
+                    self._add_edge(
+                        sensor_id_prefix,
+                        object_id_prefix,
+                        transformation=np.identity(4),
+                        isActive=False,
+                    )
+                else:
+                    self._add_edge(
+                        sensor_id_prefix,
+                        object_id_prefix,
+                        transformation=poses[object_id][0],
+                        isActive=poses[object_id][1],
+                    )
 
     def add_object(self, object_id):
         """
@@ -178,36 +177,85 @@ class PoseGraph:
 
             for object_id in object_ids:
                 object_id_prefix = "object_" + object_id
-                try:
-                    # update the tf between the sensor and the object
-                    self.edges[sensor_id_prefix][object_id_prefix] = poses[object_id]
 
-                    # update the tf from the object to the sensor, the tf is the inverse of the tf from the sensor to the object
+                if object_id_prefix not in self.object_id:
+                    print(
+                        "The object",
+                        object_id_prefix,
+                        " is not in the graph, add it to the graph ... ",
+                    )
+                    self.add_object(object_id)
+                    self._add_edge(
+                        sensor_id_prefix, object_id_prefix, np.identity(4), False
+                    )
+
+                elif len(poses[object_id]) == 0:
+                    self.edges[sensor_id_prefix][object_id_prefix] = [
+                        np.identity(4),
+                        False,
+                    ]
+                    self.edges[object_id_prefix][sensor_id_prefix] = [
+                        np.identity(4),
+                        False,
+                    ]
+                # update the tf from the object to the sensor, the tf is the inverse of the tf from the sensor to the object
+                else:
+                    self.edges[sensor_id_prefix][object_id_prefix] = [
+                        np.identity(4),
+                        False,
+                    ]
+                    self.edges[object_id_prefix][sensor_id_prefix] = [
+                        np.identity(4),
+                        False,
+                    ]
+                    self.edges[sensor_id_prefix][object_id_prefix][0] = poses[
+                        object_id
+                    ][0]
+                    self.edges[sensor_id_prefix][object_id_prefix][1] = poses[
+                        object_id
+                    ][1]
+
                     self.edges[object_id_prefix][sensor_id_prefix][0] = np.linalg.inv(
                         poses[object_id][0]
                     )
                     self.edges[object_id_prefix][sensor_id_prefix][1] = poses[
                         object_id
                     ][1]
-                except KeyError:
-                    # Tackle the case when the object is not in the graph
-                    # TODO: add the object to the graph
-                    # print(
-                    #     "The object",
-                    #     object_id_prefix,
-                    #     " is not in the graph, add it to the graph ... ",
-                    # )
-                    for object_id, (transformation, isActive) in poses.items():
-                        object_id_prefix = "object_" + object_id
-                        if object_id_prefix not in self.object_id:
-                            self.add_object(object_id)
+                #     print("object id: ", object_id_prefix)
+                #     print("sensor id: ", sensor_id_prefix)
 
-                        self._add_edge(
-                            sensor_id_prefix,
-                            object_id_prefix,
-                            transformation=transformation,
-                            isActive=isActive,
-                        )
+                #     print("edges: ", self.edges[sensor_id_prefix][object_id_prefix])
+                # print("edge id: ", self.edges[sensor_id_prefix])
+
+                # Tackle the case when the object is not in the graph
+                # TODO: add the object to the graph
+
+                # if len(poses[object_id]) == 0:
+                #     # update the tf between the sensor and the object
+
+                #     self.add_object(object_id)
+                #     print("object id: ", object_id_prefix)
+                #     print("sensor id: ", sensor_id_prefix)
+                #     print(
+                #         "sensor in the graph? : ",
+                #         sensor_id_prefix in self.sensor_id,
+                #     )
+
+                # else:
+                #     self.add_object(object_id)
+                #     print("object id: ", object_id_prefix)
+                #     print("sensor id: ", sensor_id_prefix)
+                #     print(
+                #         "sensor in the graph? : ",
+                #         sensor_id_prefix in self.sensor_id,
+                #     )
+
+                #     self._add_edge(
+                #         sensor_id_prefix,
+                #         object_id_prefix,
+                #         transformation=poses[object_id][0],
+                #         isActive=poses[object_id][1],
+                #     )
 
         # TODO: need to consider the case when the object is no longer visible for the sensor
         # Is it necessary to remove the edge between the sensor and the object?
@@ -581,9 +629,15 @@ class PoseGraph:
 
             for sensor_prefix in self.sensor_id:
                 if sensor_prefix not in self.edges[world_frame_id_prefix]:
+                    frames[sensor_prefix][world_frame_id_prefix][
+                        "sensor_tag"
+                    ].set_alpha(0.0)
                     continue  # skip the sensor if the edge connected to world is not in the graph
 
                 elif self.edges[world_frame_id_prefix][sensor_prefix][1] == False:
+                    frames[sensor_prefix][world_frame_id_prefix][
+                        "sensor_tag"
+                    ].set_alpha(0.0)
                     continue  # skip the sensor if the edge connected to world is not active
 
                 elif self.edges[world_frame_id_prefix][sensor_prefix][1] == True:
@@ -593,9 +647,114 @@ class PoseGraph:
 
                     for object_prefix in self.edges[sensor_prefix]:
                         if object_prefix == world_frame_id_prefix:
+                            # hide the frame if the object is the world frame itself
+                            frames[sensor_prefix][object_prefix]["x"].set_segments(
+                                [
+                                    [
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                    ]
+                                ]
+                            )
+                            frames[sensor_prefix][object_prefix]["y"].set_segments(
+                                [
+                                    [
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                    ]
+                                ]
+                            )
+                            frames[sensor_prefix][object_prefix]["z"].set_segments(
+                                [
+                                    [
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                    ]
+                                ]
+                            )
+                            frames[sensor_prefix][object_prefix][
+                                "sensor_tag"
+                            ].set_alpha(0.0)
+
                             continue  # skip the world frame itself
 
                         if self.edges[sensor_prefix][object_prefix][1] == False:
+                            # hide the frame if the edge is not active
+                            frames[sensor_prefix][object_prefix]["x"].set_segments(
+                                [
+                                    [
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                    ]
+                                ]
+                            )
+                            frames[sensor_prefix][object_prefix]["y"].set_segments(
+                                [
+                                    [
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                    ]
+                                ]
+                            )
+                            frames[sensor_prefix][object_prefix]["z"].set_segments(
+                                [
+                                    [
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                        (
+                                            0,
+                                            0,
+                                            0,
+                                        ),
+                                    ]
+                                ]
+                            )
+                            frames[sensor_prefix][object_prefix][
+                                "sensor_tag"
+                            ].set_alpha(0.0)
                             continue  # skip the object if the edge connected to the sensor is not active
 
                         # update the frame primitive pose
@@ -656,18 +815,18 @@ class PoseGraph:
                         )
                         tag_position = np.column_stack(
                             (
-                                frame_pm_temp[0, 1],
-                                frame_pm_temp[1, 1],
-                                frame_pm_temp[2, 1],
+                                frame_pm_temp[0, 0],
+                                frame_pm_temp[1, 0],
+                                frame_pm_temp[2, 0],
                             )
                         )
 
                         frames[sensor_prefix][object_prefix][
                             "sensor_tag"
                         ]._offsets3d = (
-                            tag_position[:, 0] + label_offset * sCount,
+                            tag_position[:, 0],
                             tag_position[:, 1],
-                            tag_position[:, 2],
+                            tag_position[:, 2] - label_offset * sCount,
                         )
                         frames[sensor_prefix][object_prefix]["sensor_tag"].set_alpha(
                             1.0
@@ -675,14 +834,15 @@ class PoseGraph:
 
                         frames[sensor_prefix][object_prefix]["frame_id"].set_position(
                             [
-                                frame_pm_temp[0, 2],
-                                frame_pm_temp[1, 2],
+                                frame_pm_temp[0, 0],
+                                frame_pm_temp[1, 0],
                             ]
                         )
                         frames[sensor_prefix][object_prefix][
                             "frame_id"
                         ].set_3d_properties(
-                            frame_pm_temp[2, 2] + axis_length + label_offset, zdir="x"
+                            frame_pm_temp[2, 0] + 3 * label_offset,
+                            zdir="x",
                         )
                         frames[sensor_prefix][object_prefix]["frame_id"].set_alpha(1.0)
 
@@ -701,9 +861,112 @@ class PoseGraph:
 
             for object_prefix in self.object_id:
                 if object_prefix not in self.edges[world_frame_id_prefix]:
+                    frames[world_frame_id_prefix][object_prefix]["x"].set_segments(
+                        [
+                            [
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                            ]
+                        ]
+                    )
+                    frames[world_frame_id_prefix][object_prefix]["y"].set_segments(
+                        [
+                            [
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                            ]
+                        ]
+                    )
+                    frames[world_frame_id_prefix][object_prefix]["z"].set_segments(
+                        [
+                            [
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                            ]
+                        ]
+                    )
+                    frames[world_frame_id_prefix][object_prefix][
+                        "sensor_tag"
+                    ].set_alpha(0.0)
                     continue
 
                 elif self.edges[world_frame_id_prefix][object_prefix][1] == False:
+                    # hide the frame if the edge is not active
+                    frames[world_frame_id_prefix][object_prefix]["x"].set_segments(
+                        [
+                            [
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                            ]
+                        ]
+                    )
+                    frames[world_frame_id_prefix][object_prefix]["y"].set_segments(
+                        [
+                            [
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                            ]
+                        ]
+                    )
+                    frames[world_frame_id_prefix][object_prefix]["z"].set_segments(
+                        [
+                            [
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                                (
+                                    0,
+                                    0,
+                                    0,
+                                ),
+                            ]
+                        ]
+                    )
+                    frames[world_frame_id_prefix][object_prefix][
+                        "sensor_tag"
+                    ].set_alpha(0.0)
                     continue
 
                 elif self.edges[world_frame_id_prefix][object_prefix][1] == True:
@@ -765,18 +1028,18 @@ class PoseGraph:
                     )
                     tag_position = np.column_stack(
                         (
-                            frame_pm_temp[0, 1],
-                            frame_pm_temp[1, 1],
-                            frame_pm_temp[2, 1],
+                            frame_pm_temp[0, 0],
+                            frame_pm_temp[1, 0],
+                            frame_pm_temp[2, 0],
                         )
                     )
 
                     frames[world_frame_id_prefix][object_prefix][
                         "sensor_tag"
                     ]._offsets3d = (
-                        tag_position[:, 0] + label_offset * sCount,
+                        tag_position[:, 0],
                         tag_position[:, 1],
-                        tag_position[:, 2],
+                        tag_position[:, 2] - label_offset * sCount,
                     )
                     frames[world_frame_id_prefix][object_prefix][
                         "sensor_tag"

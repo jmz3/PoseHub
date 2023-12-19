@@ -138,6 +138,7 @@ class ZMQManager:
                 if len(received_dict[topic].split(",")) < 7:
                     # means no pose received
                     # print(f'{topic}',received_dict[topic])
+                    tool_info[topic] = [np.identity(4), False]
                     continue
                 else:
                     twist = np.array(
