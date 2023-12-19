@@ -71,8 +71,8 @@ def main(args):
 
     args_2 = argparse.Namespace(
         sub_ip=args.sub_ip_2,
-        sub_port="5580",
-        pub_port="5581",
+        sub_port="5581",
+        pub_port="5580",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
         pub_topic=[tool_1_id, tool_2_id, tool_3_id],
         sensor_name=sensor_2_id,
@@ -99,8 +99,8 @@ def main(args):
     zmq_manager_1.initialize()
     zmq_manager_2.initialize()
 
-    # pose_graph.add_sensor("h1")
-    # pose_graph.add_sensor("h2")
+    pose_graph.add_sensor("h1")
+    pose_graph.add_sensor("h2")
 
     try:
         while True:
@@ -146,16 +146,16 @@ def main(args):
             plt.pause(0.001)
             print("Time for visualization: ", time.time() - start_time)
 
-            # # # test update poses
-            # try:
-            #     tool1_pose = poseinfo_sensor1["tool_1"][0]
-            #     print(tool1_pose[:3,3],Rot.from_matrix(tool1_pose[:3,:3]).as_quat())
-            #     move = np.identity(4)
-            #     move[:3,:3] = Rot.from_euler("zxy", [20, 55, 36], degrees=True).as_matrix()
-            #     move[:3,3] = np.array([0.01, 0.02, 0.03])
-            #     zmq_manager_1.send_poses("tool_2", tool1_pose@move)
-            # except:
-            #     pass
+            # # test update poses
+            try:
+                tool1_pose = poseinfo_sensor1["tool_1"][0]
+                print(tool1_pose[:3,3],Rot.from_matrix(tool1_pose[:3,:3]).as_quat())
+                move = np.identity(4)
+                move[:3,:3] = Rot.from_euler("zxy", [20, 55, 36], degrees=True).as_matrix()
+                move[:3,3] = np.array([0.01, 0.02, 0.03])
+                zmq_manager_1.send_poses("tool_2", tool1_pose@move)
+            except:
+                pass
 
     except KeyboardInterrupt:
         zmq_manager_1.terminate()
@@ -170,25 +170,25 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sub_ip_1",
-        default="10.203.59.134",
+        default="10.203.207.38",
         type=str,
         help="subscriber ip address sensor 1",
-    )  # 10.203.183.32
+    )
     parser.add_argument(
         "--sub_ip_2",
-        default="10.203.72.192",
+        default="10.203.192.59",
         type=str,
         help="subscriber ip address sensor 2",
     )
     parser.add_argument(
         "--sub_topic",
-        default=["tool_1", "tool_2", "tool_3"],
+        default=["artool", "phantom", "reference_1"],
         type=str,
         help="subscriber topics",
     )
     parser.add_argument(
         "--pub_topic",
-        default=["tool_1", "tool_2", "tool_3"],
+        default=["artool", "phantom", "reference_1"],
         type=str,
         help="publisher topic",
     )
