@@ -159,15 +159,15 @@ def main(args):
             # print("Time for visualization: ", time.time() - start_time)
 
             # # test update poses
-            try:
-                tool1_pose = poseinfo_sensor1["artool"][0]
-                print(tool1_pose[:3,3],Rot.from_matrix(tool1_pose[:3,:3]).as_quat())
-                move = np.identity(4)
-                move[:3,:3] = Rot.from_euler("zxy", [20, 55, 36], degrees=True).as_matrix()
-                move[:3,3] = np.array([0.01, 0.02, 0.03])
-                zmq_manager_1.send_poses("phantom", tool1_pose@move)
-            except:
-                pass
+            # try:
+            #     tool1_pose = poseinfo_sensor1["artool"][0]
+            #     print(tool1_pose[:3,3],Rot.from_matrix(tool1_pose[:3,:3]).as_quat())
+            #     move = np.identity(4)
+            #     move[:3,:3] = Rot.from_euler("zxy", [20, 55, 36], degrees=True).as_matrix()
+            #     move[:3,3] = np.array([0.01, 0.02, 0.03])
+            #     zmq_manager_1.send_poses("phantom", tool1_pose@move)
+            # except:
+            #     pass
 
     except KeyboardInterrupt:
         zmq_manager_1.terminate()
@@ -182,8 +182,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sub_ip_1",
-        # default="10.203.59.134",
-        default="10.203.192.59",
+        default="10.203.59.134",
+        # default="10.203.192.59",
         type=str,
         help="subscriber ip address sensor 1",
     )

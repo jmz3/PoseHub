@@ -148,9 +148,11 @@ class ZMQManager:
                     # x,y,z,w = twist[3:7]
                     # pose_mtx[:3, :3] = Rot.from_quat([-x,-y,-z,w]).as_matrix()
                     quat_right = np.array([twist[3], twist[4], -twist[5], twist[6]])
-
-                    pose_mtx[:3, :3] = Rot.from_quat(quat_right).as_matrix()
-                    pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
+                    quat_left = twist[3:7]
+                    pose_mtx[:3, :3] = Rot.from_quat(quat_left).as_matrix()
+                    # pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
+                    pose_mtx[:3, 3] = np.array([twist[0], twist[1], twist[2]])
+                    
                     # # convert to cv convention
                     # pose_mtx[0,2] *= -1
                     # pose_mtx[1,2] *= -1
@@ -181,10 +183,10 @@ class ZMQManager:
         # quat_right =
         quat_right = Rot.from_matrix(transform_mtx[:3, :3]).as_quat().reshape(1, -1)
         quat_left = quat_right
-        quat_left[:, 2] *= -1
+        # quat_left[:, 2] *= -1
         trans_right = transform_mtx[:3, 3].reshape(1, -1)
         trans_left = trans_right
-        trans_left[:, 2] *= -1
+        # trans_left[:, 2] *= -1
 
         new_pose = np.hstack([trans_left, quat_left])
         # Change to unity convention
