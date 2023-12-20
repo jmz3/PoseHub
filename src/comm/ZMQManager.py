@@ -4,8 +4,6 @@ import sys
 import threading
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
-from collections import defaultdict
-
 
 class ZMQManager:
     def __init__(self, sub_ip, sub_port, pub_port, sub_topic, pub_topic, sensor_name):
@@ -48,10 +46,6 @@ class ZMQManager:
 
         return context, subscriber
 
-    # @staticmethod
-    # def process_message(topic, message):
-    #     return topic + f" {message}"
-
     def update_SubPoses(self, topic, msg):
         self.sub_poses[topic] = msg
 
@@ -65,7 +59,6 @@ class ZMQManager:
                 try:
                     topic, message = sub_socket.recv_multipart()
                     self.update_SubPoses(topic.decode("utf-8"), message.decode("utf-8"))
-                    # print(f"{topic.decode('utf-8')}: {message.decode('utf-8')}")
                 except zmq.Again:
                     print(f"{self.sensor_name}: No message received within our timeout period")
                 except KeyboardInterrupt:
@@ -81,8 +74,6 @@ class ZMQManager:
         while True:
             if self.connected:
                 for topic in self.pub_topic:
-                    # message = self.process_message(f'{topic}', time.time())
-                    # message = self.process_message(topic, self.pub_messages[topic])
                     message = f"{self.pub_messages[topic]}"
                     pub_socket.send_multipart(
                         [topic.encode("utf-8"), message.encode("utf-8")]
@@ -102,7 +93,6 @@ class ZMQManager:
         self.sub_thread = threading.Thread(target=self.subscriber_thread)
         self.sub_thread.start()
         self.pub_thread.start()
-        # return self, sub_thread, pub_thread
 
     def terminate(self):
         """
@@ -131,13 +121,8 @@ class ZMQManager:
         pose_mtx = np.identity(4)
         tool_info = {}
         for topic in self.sub_topic:
-            # print(topic)
-            # topic = topic.decode("utf-8")
-            if topic in received_dict:  # check if the topic is in the received_dict
-                # print(topic)
+            if topic in received_dict:
                 if len(received_dict[topic].split(",")) < 7:
-                    # means no pose received
-                    # print(f'{topic}',received_dict[topic])
                     tool_info[topic] = [np.identity(4), False]
                     continue
                 else:
@@ -145,25 +130,14 @@ class ZMQManager:
                         [float(x) for x in received_dict[topic].split(",")]
                     )
                     pose_mtx = np.identity(4)
-                    # x,y,z,w = twist[3:7]
-                    # pose_mtx[:3, :3] = Rot.from_quat([-x,-y,-z,w]).as_matrix()
-                    quat_right = np.array([twist[3], twist[4], -twist[5], twist[6]])
                     quat_left = twist[3:7]
                     pose_mtx[:3, :3] = Rot.from_quat(quat_left).as_matrix()
-                    # pose_mtx[:3, 3] = np.array([twist[0], twist[1], -twist[2]])
                     pose_mtx[:3, 3] = np.array([twist[0], twist[1], twist[2]])
-                    
-                    # # convert to cv convention
-                    # pose_mtx[0,2] *= -1
-                    # pose_mtx[1,2] *= -1
-                    # pose_mtx[2,0] *= -1
-                    # pose_mtx[2,1] *= -1
-                    # pose_mtx[2,3] *= -1
+
                     tool_info[topic] = [
                         pose_mtx,
                         twist[7] == 1,
-                    ]  # twist[7] == 1 means isActive?
-                # print(tool_info['tool_1'][0][:3,3])
+                    ]
             else:
                 print("Subscribing to the topic: ", topic, " but no message received")
                 return {}
@@ -179,58 +153,12 @@ class ZMQManager:
         if transform_mtx.shape != (4, 4):
             print("The size of the transformation matrix is not 4x4")
             return
+        
         # # convert to unity convention
-        # quat_right =
-        quat_right = Rot.from_matrix(transform_mtx[:3, :3]).as_quat().reshape(1, -1)
-        quat_left = quat_right
-        # quat_left[:, 2] *= -1
-        trans_right = transform_mtx[:3, 3].reshape(1, -1)
-        trans_left = trans_right
-        # trans_left[:, 2] *= -1
+        quat = Rot.from_matrix(transform_mtx[:3, :3]).as_quat().reshape(1, -1)
+        trans = transform_mtx[:3, 3].reshape(1, -1)
 
-        new_pose = np.hstack([trans_left, quat_left])
-        # Change to unity convention
-        # new_pose[:,2] *= -1
-        # new_pose[:,3] *= -1
-        # new_pose[:,4] *= -1
+        new_pose = np.hstack([trans, quat])
         # Convert to string
         new_pose_str = ",".join(str(num) for num in new_pose.flatten())
         self.pub_messages[topic] = new_pose_str + ',1'
-        # pub_message_on_topic = ""
-        # position = transform_mtx[:3, 3]
-        # quaternion = Rot.from_matrix(transform_mtx[:3, :3]).as_quat()
-
-        # # encode the transformation matrix into a string
-        # # the string is in the order of [x, y, z, w, x, y, z, isActive], separated by commas
-        # pub_message_on_topic += f"{position[0]},{position[1]},{-position[2]},"
-        # pub_message_on_topic += f"{quaternion[0]},{quaternion[1]},{quaternion[2]},{quaternion[3]},"  # the quaternion is in the order of x,y,z,w
-        # pub_message_on_topic += (
-        #     f"1"  # isActive since we are sending the calculated poses
-        # )
-
-        # self.pub_messages[topic] = pub_message_on_topic
-
-    # def run(self):
-    #     self.connected = True
-    #     pub_thread = threading.Thread(target=self.publisher_thread)
-    #     sub_thread = threading.Thread(target=self.subscriber_thread)
-    #     sub_thread.start()
-    #     pub_thread.start()
-
-    #     try:
-    #         while True:
-    #             pass
-    #     except KeyboardInterrupt:
-    #         self.connected = False
-    #         time.sleep(0.1)
-    #         print("Main thread interrupted, cleaning up...")
-    #         sub_thread.join()
-    #         pub_thread.join()
-
-
-# if __name__ == "__main__":
-#     global posegraph = PoseGraph()
-
-#     hl1_manager = ZMQManager("")
-#     hl1_manager.run()
-#     hl1_manager.msg

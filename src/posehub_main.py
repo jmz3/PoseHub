@@ -111,8 +111,6 @@ def main(args):
             poseinfo_sensor1 = zmq_manager_1.receive_poses()
             poseinfo_sensor2 = zmq_manager_2.receive_poses()
 
-            # print("sensor id: ", pose_graph.sensor_id)
-            # print("object id: ", pose_graph.object_id)
             if len(poseinfo_sensor1) != 0:
                 pose_graph.update_graph("h1", poseinfo_sensor1)
             else:
@@ -131,23 +129,17 @@ def main(args):
                 # transfer the topic from bytes to string
 
                 pose = pose_graph.get_transform("h1", topic, solver_method="BFS")
-                # print("calculated pose: ", pose)
                 if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
-                # if pose is not None:
                     zmq_manager_1.send_poses(topic, pose)
 
             for topic in args_2.pub_topic:
                 # transfer the topic from bytes to string
-                
                 pose = pose_graph.get_transform("h2", topic, solver_method="BFS")
-                # print("calculated pose: ", pose)
                 if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
                     zmq_manager_2.send_poses(topic, pose)
 
             print("edges after graph search: ", pose_graph.edges)
-            # visualize the poses
-            # start_time = time.time()
-            # pose_graph.viz_graph(ax=ax, world_frame_id="h1", frame_type=2)
+
             pose_graph.viz_graph_update(
                 frames=frames,
                 frame_primitive=frame_pm,
@@ -156,7 +148,6 @@ def main(args):
             )
 
             plt.pause(0.001)
-            # print("Time for visualization: ", time.time() - start_time)
 
             # # test update poses
             # try:
@@ -183,7 +174,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sub_ip_1",
         default="10.203.59.134",
-        # default="10.203.192.59",
         type=str,
         help="subscriber ip address sensor 1",
     )
@@ -201,29 +191,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--pub_topic",
-        # default=["tool_1", "tool_2", "tool_3"],
         default=["artool", "reference_1", "phantom"],
         type=str,
         help="publisher topic",
     )
     args = parser.parse_args()
-
-    # args_1 = argparse.Namespace(
-    # sub_ip=args.sub_ip,
-    # sub_port="5588",
-    # pub_port="5589",
-    # sub_topic=["tool_1", "tool_2", "tool_3"],
-    # pub_topic=["tool_1", "tool_2", "tool_3"],
-    # sensor_name="h1"
-    # ) # args for h1 sensor
-
-    # args_2 = argparse.Namespace(
-    #     sub_ip="10.203.150.51",
-    #     sub_port="5589",
-    #     pub_port="5580",
-    #     sub_topic=["tool_1", "tool_2", "tool_3"],
-    #     pub_topic=["tool_1", "tool_2", "tool_3"],
-    #     sensor_name="h2"
-    #     )
 
     main(args)
