@@ -1,4 +1,3 @@
-# from pose_graph import PoseGraph
 from typing import Type, Dict, List, Optional
 from comm.ZMQManager import ZMQManager
 from pose_graph import PoseGraph
@@ -25,7 +24,7 @@ def main(args):
     plt.ion()
     plt.show()
     ax = figure.add_subplot(projection="3d")
-    ax = axis_init(ax, 1.0, "Pose")
+    ax = axis_init(ax, 1.5, "Pose")
 
     tool_1_id = args.sub_topic[0]
     tool_2_id = args.sub_topic[1]
@@ -39,7 +38,7 @@ def main(args):
         sensors=[sensor_1_id, sensor_2_id],
         # sensors=[sensor_2_id],
         objects=[tool_1_id, tool_2_id, tool_3_id],
-        axis_length=0.3,
+        axis_length=0.5,
     )  # generate the frames for visualization,
     # the number of frames is equal to the number of sensors * objects
     # frames is a dictionary with the following structure:
