@@ -23,9 +23,6 @@ env.bak/
 .ipynb_checkpoints/
 **.ipynb
 
-# image
-**.png
-**.jpg
-**.jpeg
+
 
 **.npy
