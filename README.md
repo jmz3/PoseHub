@@ -1,6 +1,6 @@
 <div align='center'>
     <h1>PoseHub</h1>
-    <h3>A library for managing the spatial relationship for realtime object tracking task</h3>
+    <h4>A library for managing the spatial relationship for realtime object tracking task</h4>
     <a href="https://www.python.org/"><img src='https://img.shields.io/badge/Made%20with-Python-1f425f.svg'>
 </a>
 <a href="https://opensource.org/licenses/MIT">
@@ -59,7 +59,15 @@ Since our communication objects are running in different threads, we need to use
 ```python
 # join the threads
 zmq_manager_1.terminate()
+
 ```
+
+The graph can be visualized by calling the `vis_graph` function in the realtime (max 100Hz). Here is an example of the visualization of the graph. The red and green markers represent the frame is being tracked by different sensors. 
+
+<img src="docs/DemoPoseGraph.png" width="500"/>
+
+
+
 
 ## Core Features
 * Modularized TCP/IP communication for receiving data from different sensors
