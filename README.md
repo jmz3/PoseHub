@@ -1,17 +1,14 @@
-<div align='center'>
-    <h1>PoseHub</h1>
-    <h4>A library for managing the spatial relationship for realtime object tracking task</h4>
-    <a href="https://www.python.org/"><img src='https://img.shields.io/badge/Made%20with-Python-1f425f.svg'>
-</a>
-<a href="https://opensource.org/licenses/MIT">
-<img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
-</a>
-<a href="https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity">
-<img src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" alt="Maintenance">
-</a>
+<h1 align="center">PoseHub</h1>
+<h4 align="center">A library for managing the spatial relationship for realtime object tracking task</h4>
+
+<p align="center">
+<a href="https://www.python.org/"><img src='https://img.shields.io/badge/Made%20with-Python-1f425f.svg'></a>
+<a href="ros"><img src='https://img.shields.io/ros/v/noetic/rviz'></a>
+<a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+<a href="https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity"><img src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" alt="Maintenance"></a>
 </div>
 
-PoseHub is a library that manages the transformations of different sensors and objects in the same scene and provides a unified interface for accessing and solving the spatial relationship between frames. For the purpose of simplification, this package only depends on the [numpy](https://numpy.org/) and [matplotlib]() package. The idea is inspired by the [tf library](https://wiki.ros.org/tf) and [Open3D](http://www.open3d.org/).
+PoseHub is a library that manages the transformations of different sensors and objects in the same scene and provides a unified interface for accessing and solving the spatial relationship between frames. For simplification, this package only depends on the [numpy](https://numpy.org/) and [matplotlib]() package. The idea is inspired by the [tf library](https://wiki.ros.org/tf) and [Open3D](http://www.open3d.org/).
 
 ## Installation
 
@@ -22,7 +19,7 @@ git clone https://github.com/jmz3/PoseHub.git
 ## Usage
 Open a terminal and run the following command to start the ZMQ server.
 Note that you need to modify the IP address in the `posehub_main.py` file to the IP address of your sensor (either HoloLens or something else).
-```bash
+
 ```bash
 python3 posehub_main.py
 ```
