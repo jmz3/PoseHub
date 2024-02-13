@@ -1,0 +1,9 @@
+<launch>
+
+    <rosparam param="frame_name">sensor_1</rosparam>
+    <node pkg="posehub_tools" type="fake_tf_node" name="fake_tf" output="screen">
+    </node>
+
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find posehub_tools)/config/config.rviz"
+        output="screen" />
+</launch>

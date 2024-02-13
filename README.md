@@ -16,11 +16,14 @@ Clone the repository to the workspace.
 git clone https://github.com/jmz3/PoseHub.git
 ```
 
-Build the ros-related package
+If you want to use the ros features of the package, you need to build the ros-related packages, namely `posehub_ros` and `posehub_tools`. 
 ```bash
 cd PoseHub
 catkin build
 ```
+
+But if you only want to use the core features of the package, no more installation is needed. You can directly use the package by importing the `PoseGraph` class.
+
 
 ## Structure Explained
 The package is organized as follows:

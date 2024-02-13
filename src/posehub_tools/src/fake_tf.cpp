@@ -4,34 +4,39 @@
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "fake_tf_broadcaster");
+    ros::init(argc, argv, "fake_tf_broadcaster", ros::init_options::AnonymousName);
     ros::NodeHandle nh;
 
     tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
 
     // Motion frequency
-    double frequency = 10.0;
+    double frequency;
 
-    ObjectRandomMotionEngine sensor_1("sensor_1", 1 / frequency);
-    sensor_1.start();
+    nh.param("frequency", frequency, 50.0);
+
+    std::string name;
+    nh.param<std::string>("frame_name", name, "default_frame_name");
+
+    ObjectRandomMotionEngine object_motion(name, 1 / frequency);
+    object_motion.start();
 
     ros::Rate rate(frequency);
 
     while (ros::ok())
     {
-        sensor_1.update();
+        object_motion.update();
 
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = "world";
-        transformStamped.child_frame_id = "sensor_1";
-        transformStamped.transform.translation.x = sensor_1.object.pose.position.x;
-        transformStamped.transform.translation.y = sensor_1.object.pose.position.y;
-        transformStamped.transform.translation.z = sensor_1.object.pose.position.z;
-        transformStamped.transform.rotation.x = sensor_1.object.pose.orientation.x;
-        transformStamped.transform.rotation.y = sensor_1.object.pose.orientation.y;
-        transformStamped.transform.rotation.z = sensor_1.object.pose.orientation.z;
-        transformStamped.transform.rotation.w = sensor_1.object.pose.orientation.w;
+        transformStamped.child_frame_id = name;
+        transformStamped.transform.translation.x = object_motion.object.pose.position.x;
+        transformStamped.transform.translation.y = object_motion.object.pose.position.y;
+        transformStamped.transform.translation.z = object_motion.object.pose.position.z;
+        transformStamped.transform.rotation.x = object_motion.object.pose.orientation.x;
+        transformStamped.transform.rotation.y = object_motion.object.pose.orientation.y;
+        transformStamped.transform.rotation.z = object_motion.object.pose.orientation.z;
+        transformStamped.transform.rotation.w = object_motion.object.pose.orientation.w;
 
         br.sendTransform(transformStamped);
 
