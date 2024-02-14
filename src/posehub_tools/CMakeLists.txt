@@ -148,6 +148,13 @@ add_library(random_engine
 add_executable(fake_tf_node 
   src/fake_tf.cpp)
 
+add_executable(fake_static_ref_node
+  src/fake_static_ref.cpp)
+
+add_executable(fake_sensor_noise_node
+  src/fake_sensor_noise.cpp)
+
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -172,6 +179,17 @@ target_link_libraries(fake_tf_node
   ${catkin_LIBRARIES}
   ${EIGEN3_LIBRARIES}
   random_engine
+  )
+
+target_link_libraries(fake_static_ref_node
+  ${catkin_LIBRARIES}
+  ${EIGEN3_LIBRARIES}
+  random_engine
+  )
+
+target_link_libraries(fake_sensor_noise_node
+  ${catkin_LIBRARIES}
+  ${EIGEN3_LIBRARIES}
   )
 
 #############
