@@ -84,6 +84,14 @@ The graph can be visualized by calling the `vis_graph` function in the realtime 
 
 <img src="docs/DemoPoseGraph.png" width="500"/>
 
+The synthetic data generator can create "real" frame motion and noise. To use the synthetic data generator, you can run the following command in the terminal.
+```bash
+roslaunch posehub_tools synthetic_data.launch
+```
+Here is how the synthetic data looks like in the rviz.
+
+<img src="docs/fake_frames.gif" width = "500"/>
+
 
 
 
@@ -91,16 +99,16 @@ The graph can be visualized by calling the `vis_graph` function in the realtime 
 * Modularized TCP/IP communication for receiving data from different sensors
 * Unified Graph structure for storing the transformation between different sensors and objects
 * Graph search based spatial transformation solver
+* Random synthetic data generator, and noise injection for testing
+* 
 
 
 
-## Data Structure
-Currently, the basic data structure is a customized graph class called `PoseGraph`. It is a directed graph that stores the transformation between nodes. The transformation is represented by a `Pose` class, which contains a 3x3 rotation matrix and a 3x1 translation vector. The `PoseGraph` class provides a unified interface for accessing the transformation between any two nodes. The transformation between two nodes is the product of all the transformations along the path between them. The `PoseGraph` class also provides a unified interface for accessing the transformation between any node and the root node. The transformation between a node and the root node is the product of all the transformations along the path from the node to the root node.
 
 ## Threading and Locking
 The communication objects are running in different threads. They are created and started in the main thread. The main thread is responsible for creating and starting the communication objects. The communication objects are responsible for receiving data from the sensors and updating the `PoseGraph` object. The `PoseGraph` object is declared in the main thread so that it can be accessed by all the communication objects. The `PoseGraph` object is locked when it is being updated by the communication objects. The `PoseGraph` object is unlocked when it is being accessed by the main thread.
 
 ## Contributors
-The package is designed to be used in the [Surgical Tool Tracking using Multi-Sensor System](), the final project of [EN.601.654: Augmented Reality](). The contributors of this package are:
+The package is designed to be used in the [Surgical Tool Tracking using Multi-Sensor System](), the final project of [EN.601.654: Augmented Reality](https://fall2023.jhu-ar.yihao.one/). The contributors of this package are:
 * [Jiaming Zhang](https://github.com/jmz3)
 * [Hongchao Shu](https://github.com/Soooooda69)

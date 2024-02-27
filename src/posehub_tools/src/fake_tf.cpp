@@ -1,3 +1,9 @@
+/* This node creates a fake tf broadcaster that simulates the motion of a particular object.
+It publishes the object's pose and orientation to the /tf topic and the object's pose to the /object topic.
+The object's motion is generated using a random motion engine.
+The object's name and motion frequency can be specified as private parameters.
+*/
+
 #include <ros/ros.h>
 #include <tf2_ros/transform_broadcaster.h>
 

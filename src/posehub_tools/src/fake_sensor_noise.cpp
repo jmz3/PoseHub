@@ -1,3 +1,7 @@
+/* This is a ROS node that creates a fake sensor noise for the input poses.
+It subscribes to all the topics that match the specified pattern, which is "object" by default,
+ and adds noise to the input poses to mimic the real sensor readings. */
+
 #include <ros/ros.h>
 #include <ros/master.h>
 #include <vector>
@@ -5,17 +9,6 @@
 #include <regex>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseWithCovariance.h>
-
-// define the sensor noise covariance matrix
-const double sensor_noise_covariance[36] = {
-    0.1, 0, 0, 0, 0, 0,
-    0, 0.1, 0, 0, 0, 0,
-    0, 0, 0.1, 0, 0, 0,
-    0, 0, 0, 0.1, 0, 0,
-    0, 0, 0, 0, 0.1, 0,
-    0, 0, 0, 0, 0, 0.1};
-
-geometry_msgs::Pose pose;
 
 // Function to get the list of topics that match the input pattern using regular expressions
 std::vector<std::string> getTopicsWithPattern(const std::string &pattern)
