@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
+  tf
   tf2
   tf2_ros
 )
@@ -136,6 +137,9 @@ include
 add_library(random_engine 
     src/random_motion_engine.cpp)
 
+add_library(random_observation
+    src/random_observation_engine.cpp)
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -153,7 +157,6 @@ add_executable(fake_static_ref_node
 
 add_executable(fake_sensor_noise_node
   src/fake_sensor_noise.cpp)
-
 
 
 ## Rename C++ executable without prefix
@@ -175,6 +178,11 @@ target_link_libraries(random_engine
   ${EIGEN3_LIBRARIES}
   )
 
+target_link_libraries(random_observation
+  ${catkin_LIBRARIES}
+  ${EIGEN3_LIBRARIES}
+  )
+
 target_link_libraries(fake_tf_node
   ${catkin_LIBRARIES}
   ${EIGEN3_LIBRARIES}
@@ -190,6 +198,7 @@ target_link_libraries(fake_static_ref_node
 target_link_libraries(fake_sensor_noise_node
   ${catkin_LIBRARIES}
   ${EIGEN3_LIBRARIES}
+  random_observation
   )
 
 #############

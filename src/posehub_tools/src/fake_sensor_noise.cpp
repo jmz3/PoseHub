@@ -9,7 +9,7 @@ It subscribes to all the topics that match the specified pattern, which is "obje
 #include <regex>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseWithCovariance.h>
-
+#include <posehub_tools/random_observation_engine.hpp>
 // Function to get the list of topics that match the input pattern using regular expressions
 std::vector<std::string> getTopicsWithPattern(const std::string &pattern)
 {
@@ -29,7 +29,16 @@ std::vector<std::string> getTopicsWithPattern(const std::string &pattern)
         {
             if (std::regex_match(topic_info.name, regex_pattern))
             {
-                filtered_topics.push_back(topic_info.name);
+                // subtract the namespace from the topic name
+                std::string::size_type pos = topic_info.name.find_last_of('/');
+                if (pos != std::string::npos)
+                {
+                    filtered_topics.push_back(topic_info.name.substr(pos + 1));
+                }
+                else
+                {
+                    filtered_topics.push_back(topic_info.name);
+                }
             }
         }
         catch (std::regex_error &e)
@@ -42,30 +51,33 @@ std::vector<std::string> getTopicsWithPattern(const std::string &pattern)
     return filtered_topics;
 }
 
-void fake_sensor_noise_callback(const geometry_msgs::PoseConstPtr &msg)
-{
-    // Add noise to the input pose
-    geometry_msgs::Pose noised_pose = *msg;
-
-    // Add
-    // ...
-}
-
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "fake_sensor_noise_node");
     ros::NodeHandle nh;
 
-    ros::Subscriber fake_sensor_noise_sub;
-    ros::Publisher fake_sensor_noise_pub;
-
     std::vector<std::string> filtered_topics = getTopicsWithPattern("object");
 
+    // print the list of filtered topics
     for (const auto &topic : filtered_topics)
     {
-        ROS_INFO("Topic: %s", topic.c_str());
-        fake_sensor_noise_sub = nh.subscribe(topic, 10, fake_sensor_noise_callback);
+        ROS_INFO("Filtered topic: %s", topic.c_str());
     }
+
+    // Get the sensor name from the parameter server, default is "HoloLens"
+    std::string sensor_name;
+    nh.param<std::string>("fake_sensor_noise_node/sensor_name", sensor_name, "HoloLens");
+
+    ROS_INFO("The sensor name is: %s", sensor_name.c_str());
+
+    SensorNoisyReading noisy_camera_(sensor_name, filtered_topics, nh);
+    noisy_camera_.setSensorNoise(new double[36]{0.1, 0, 0, 0, 0, 0,
+                                                0, 0.1, 0, 0, 0, 0,
+                                                0, 0, 0.1, 0, 0, 0,
+                                                0, 0, 0, 0.1, 0, 0,
+                                                0, 0, 0, 0, 0.1, 0,
+                                                0, 0, 0, 0, 0, 0.1},
+                                 36);
 
     ros::Rate rate(100);
 
@@ -74,7 +86,7 @@ int main(int argc, char **argv)
     // Print the list of filtered topics
     while (nh.ok())
     {
-
+        noisy_camera_.updateSensorReading();
         rate.sleep();
     }
 

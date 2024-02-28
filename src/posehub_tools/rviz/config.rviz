@@ -6,7 +6,17 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-      Splitter Ratio: 0.5
+        - /PoseWithCovariance1
+        - /PoseWithCovariance1/Covariance1
+        - /PoseWithCovariance1/Covariance1/Position1
+        - /PoseWithCovariance1/Covariance1/Orientation1
+        - /PoseWithCovariance2
+        - /PoseWithCovariance2/Covariance1
+        - /PoseWithCovariance2/Covariance1/Position1
+        - /PoseWithCovariance3
+        - /PoseWithCovariance3/Covariance1/Position1
+        - /PoseWithCovariance3/Covariance1/Orientation1
+      Splitter Ratio: 0.43529412150382996
     Tree Height: 549
   - Class: rviz/Selection
     Name: Selection
@@ -58,7 +68,15 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        object_1:
+          Value: true
+        object_2:
+          Value: true
+        ref_1:
+          Value: true
         sensor_1:
+          Value: true
+        sensor_2:
           Value: true
         world:
           Value: true
@@ -70,9 +88,110 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
+          object_1:
+            {}
+          object_2:
+            {}
+          ref_1:
+            {}
           sensor_1:
             {}
+          sensor_2:
+            {}
       Update Interval: 0
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: PoseWithCovariance
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Axes
+      Topic: /sensor_1/object_1_noisy
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 237; 212; 0
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: PoseWithCovariance
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Axes
+      Topic: /sensor_1/object_2_noisy
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 32; 74; 135
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: PoseWithCovariance
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Axes
+      Topic: /sensor_1_noisy
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -102,7 +221,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.393627166748047
+      Distance: 3.9723432064056396
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -118,9 +237,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.47039830684661865
+      Pitch: 0.30039870738983154
       Target Frame: <Fixed Frame>
-      Yaw: 0.06539831310510635
+      Yaw: 5.919935703277588
     Saved: ~
 Window Geometry:
   Displays:
@@ -138,5 +257,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 72
-  Y: 159
+  X: 59
+  Y: 95
