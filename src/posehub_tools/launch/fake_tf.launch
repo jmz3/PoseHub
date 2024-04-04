@@ -2,7 +2,7 @@
 
     <!-- define how many fake tf nodes you want to create -->
     <!-- this number should be the same as the number of <node></node> tags below -->
-    <arg name="fake_tf_node_name_1" default="sensor_1" />
+    <arg name="fake_tf_node_name_1" default="HoloLens" />
     <arg name="fake_tf_node_name_2" default="sensor_2" />
     <arg name="fake_tf_node_name_3" default="object_1" />
     <arg name="fake_tf_node_name_4" default="object_2" />

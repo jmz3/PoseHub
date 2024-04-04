@@ -1,5 +1,6 @@
 #include <posehub_tools/random_observation_engine.hpp>
 #include <ros/ros.h>
+#include <iostream>
 /* This library provides two ways to define a noisy camera model:
 first, by providing the conventional noise covariance matrix (6x6) and the sensor frame name,
 second, by providing the sensor name and the covariance matrix (any shape) is allowed to be set later.
@@ -30,16 +31,19 @@ SensorNoisyReading::SensorNoisyReading(const std::string &sensor_frame_name,
         noise_covariance[i / 6][i % 6] = *noise_std_distr[i];
     }
 
-    sensor_state_pub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>(sensor_frame_name + "_noisy", 10);
+    sensor_state_pub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>(
+        sensor_frame_name + "_noisy",
+        10);
 
     for (int frame_num = 0; frame_num < child_frames.size(); frame_num++)
     {
         // Create a publisher for each child frame
-        object_state_pubs.push_back(nh.advertise<geometry_msgs::PoseWithCovarianceStamped>(sensor_frame_name +
-                                                                                               "/" +
-                                                                                               child_frames[frame_num] +
-                                                                                               "_noisy",
-                                                                                           10));
+        object_state_pubs.push_back(nh.advertise<geometry_msgs::PoseWithCovarianceStamped>(
+            sensor_frame_name +
+                "/" +
+                child_frames[frame_num] +
+                "_noisy",
+            10));
     }
 }
 SensorNoisyReading::SensorNoisyReading(const std::string &sensor_frame_name,
@@ -48,16 +52,19 @@ SensorNoisyReading::SensorNoisyReading(const std::string &sensor_frame_name,
 {
     sensor_state.header.frame_id = sensor_frame_name;
 
-    sensor_state_pub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>(sensor_frame_name + "_noisy", 10);
+    sensor_state_pub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>(
+        sensor_frame_name + "_noisy",
+        10);
 
     for (int frame_num = 0; frame_num < child_frames.size(); frame_num++)
     {
         // Create a publisher for each child frame
-        object_state_pubs.push_back(nh.advertise<geometry_msgs::PoseWithCovarianceStamped>(sensor_frame_name +
-                                                                                               "/" +
-                                                                                               child_frames[frame_num] +
-                                                                                               "_noisy",
-                                                                                           10));
+        object_state_pubs.push_back(nh.advertise<geometry_msgs::PoseWithCovarianceStamped>(
+            sensor_frame_name +
+                "/" +
+                child_frames[frame_num] +
+                "_noisy",
+            10));
     }
 }
 
@@ -77,7 +84,23 @@ void SensorNoisyReading::setSensorNoise(const double *noise_std_distr, const int
 
     for (int i = 0; i < int(dimension); i++) //
     {
-        noise_covariance[i / int(sqrt(dimension))][i % int(sqrt(dimension))] = *noise_std_distr;
+        noise_covariance[i / int(sqrt(dimension))][i % int(sqrt(dimension))] = *(noise_std_distr + i);
+    }
+
+    // sanity check
+    // print the noise covariance matrix
+    ROS_INFO("The noise covariance matrix is set as follows:");
+    for (int i = 0; i < int(sqrt(dimension)); i++)
+    {
+        for (int j = 0; j < int(sqrt(dimension)); j++)
+        {
+            std::cout << noise_covariance[i][j] << " ";
+
+            if (j == int(sqrt(dimension)) - 1)
+            {
+                std::cout << std::endl;
+            }
+        }
     }
 }
 
@@ -86,10 +109,11 @@ void SensorNoisyReading::updateSensorReading()
 
     try
     {
-        sensor_tf_stamped_transform = tfBuffer.lookupTransform(sensor_frame_name,
-                                                               "world",
-                                                               ros::Time(0),
-                                                               ros::Duration(3.0));
+        sensor_tf_stamped_transform = tfBuffer.lookupTransform(
+            "world",
+            sensor_frame_name,
+            ros::Time(0),
+            ros::Duration(3.0));
         updateSensorState();
     }
     catch (tf2::TransformException &ex)
@@ -103,10 +127,11 @@ void SensorNoisyReading::updateSensorReading()
     {
         try
         {
-            object_tf_stamped_transform = tfBuffer.lookupTransform(sensor_frame_name,
-                                                                   child_frames[frame_num],
-                                                                   ros::Time(0),
-                                                                   ros::Duration(3.0));
+            object_tf_stamped_transform = tfBuffer.lookupTransform(
+                sensor_frame_name,
+                child_frames[frame_num],
+                ros::Time(0),
+                ros::Duration(3.0));
 
             updateObjectState(frame_num);
         }

@@ -71,12 +71,12 @@ int main(int argc, char **argv)
     ROS_INFO("The sensor name is: %s", sensor_name.c_str());
 
     SensorNoisyReading noisy_camera_(sensor_name, filtered_topics, nh);
-    noisy_camera_.setSensorNoise(new double[36]{0.1, 0, 0, 0, 0, 0,
-                                                0, 0.1, 0, 0, 0, 0,
+    noisy_camera_.setSensorNoise(new double[36]{0.01, 0, 0, 0, 0, 0,
+                                                0, 0.05, 0, 0, 0, 0,
                                                 0, 0, 0.1, 0, 0, 0,
-                                                0, 0, 0, 0.1, 0, 0,
-                                                0, 0, 0, 0, 0.1, 0,
-                                                0, 0, 0, 0, 0, 0.1},
+                                                0, 0, 0, 0.05, 0, 0,
+                                                0, 0, 0, 0, 0.05, 0,
+                                                0, 0, 0, 0, 0, 0.05},
                                  36);
 
     ros::Rate rate(100);
