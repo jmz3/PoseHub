@@ -48,20 +48,40 @@ class UnscentedKalmanFilter:
         np.array
             The updated state vector
         """
-        x_transit = np.zeros_like(x)
-        pt = x[:3]
-        qt = x[3:7]
-        pt_prev = x[7:10]
-        qt_prev = x[10:14]
 
-        # update the position
+        # Set the state vector
+        pt, qt, pt_prev, qt_prev = x[:3], x[3:7], x[7:10], x[10:14]
+
+        # update the position based on the previous velocity
         pt_next = 2 * pt - pt_prev
-        qt_next = qt + (qt - qt_prev) / np.linalg.norm(qt - qt_prev)
 
-        # normalize the quaternion
-        # if qt_next is too small, then set it to qt
-        qt_next = (
-            qt_next / np.linalg.norm(qt_next) if np.linalg.norm(qt_next) != 0 else qt
-        )
+        dqt = qt - qt_prev
+
+        if np.linalg.norm(dqt) != 0:
+            # normalize the quaternion difference
+            dqt = dqt / np.linalg.norm(dqt)
+            # update the orientation based on the previous angular velocity
+            qt_next = Rot.from_quat(dqt).apply(qt)
+
+        else:
+            qt_next = qt
 
         return np.concatenate([pt_next, qt_next, pt, qt])
+
+    def hx(self, x):
+        """
+        The measurement function, the measurement is the position and orientation of the target object
+        relative to other objects
+
+        Params:
+        -------
+        x: np.array
+            The state vector
+
+        Returns:
+        --------
+        np.array
+            The measurement vector
+        """
+
+        return x[:7]
