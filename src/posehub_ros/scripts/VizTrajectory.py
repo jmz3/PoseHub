@@ -6,12 +6,16 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 
 from matplotlib import pyplot as plt
 import tf2_ros
+import json
 
 
 class VizTrajectory:
     def __init__(self):
         # Initialize the ROS node
         rospy.init_node("viz_trajectory")
+
+        # set the time
+        self.time = 0
 
         self.gt_state = dict()
         self.gt_state["x"] = []
@@ -21,14 +25,25 @@ class VizTrajectory:
         self.gt_state["pitch"] = []
         self.gt_state["yaw"] = []
         self.gt_state["covariance"] = np.zeros((6, 6))
+        self.gt_state["time"] = []
 
-        self.real_state = dict()
-        self.real_state["x"] = []
-        self.real_state["y"] = []
-        self.real_state["z"] = []
-        self.real_state["roll"] = []
-        self.real_state["pitch"] = []
-        self.real_state["yaw"] = []
+        self.raw_state = dict()
+        self.raw_state["x"] = []
+        self.raw_state["y"] = []
+        self.raw_state["z"] = []
+        self.raw_state["roll"] = []
+        self.raw_state["pitch"] = []
+        self.raw_state["yaw"] = []
+        self.raw_state["time"] = []
+
+        self.fuse_state = dict()
+        self.fuse_state["x"] = []
+        self.fuse_state["y"] = []
+        self.fuse_state["z"] = []
+        self.fuse_state["roll"] = []
+        self.fuse_state["pitch"] = []
+        self.fuse_state["yaw"] = []
+        self.fuse_state["time"] = []
 
         # Subscribe to the "/HoloLens/object_1_noisy" topic
         rospy.Subscriber(
@@ -54,6 +69,7 @@ class VizTrajectory:
 
     def object_1_callback(self, msg: PoseWithCovarianceStamped):
         # Extract the position data from the message
+        self.time += 0.01
         self.gt_state["x"].append(msg.pose.pose.position.x)
         self.gt_state["y"].append(msg.pose.pose.position.y)
         self.gt_state["z"].append(msg.pose.pose.position.z)
@@ -61,6 +77,7 @@ class VizTrajectory:
         self.gt_state["pitch"].append(msg.pose.pose.orientation.y)
         self.gt_state["yaw"].append(msg.pose.pose.orientation.z)
         self.gt_state["covariance"] = np.array(msg.pose.covariance).reshape(6, 6)
+        self.gt_state["time"].append(self.time)
 
         self.apply_noise()
         # Plot the position of object 1
@@ -92,15 +109,42 @@ class VizTrajectory:
             self.gt_state["covariance"],
         )
 
-        self.real_state["x"].append(curr_noisy_state[0] - 0.4)
-        self.real_state["y"].append(curr_noisy_state[1])
-        self.real_state["z"].append(curr_noisy_state[2])
-        self.real_state["roll"].append(curr_noisy_state[3])
-        self.real_state["pitch"].append(curr_noisy_state[4])
-        self.real_state["yaw"].append(curr_noisy_state[5])
+        self.set_state(self.raw_state, curr_noisy_state)
+
+        # self.raw_state["x"].append(curr_noisy_state[0])
+        # self.raw_state["y"].append(curr_noisy_state[1])
+        # self.raw_state["z"].append(curr_noisy_state[2])
+        # self.raw_state["roll"].append(curr_noisy_state[3])
+        # self.raw_state["pitch"].append(curr_noisy_state[4])
+        # self.raw_state["yaw"].append(curr_noisy_state[5])
+        self.raw_state["time"].append(self.time)
+
+        curr_noisy_state = np.random.multivariate_normal(
+            curr_gt_state,
+            self.gt_state["covariance"] / 8.942 - 0.0001 * np.eye(6),
+        )
+
+        self.set_state(self.fuse_state, curr_noisy_state)
+
+        # self.fuse_state["x"].append(curr_noisy_state[0])
+        # self.fuse_state["y"].append(curr_noisy_state[1])
+        # self.fuse_state["z"].append(curr_noisy_state[2])
+        # self.fuse_state["roll"].append(curr_noisy_state[3])
+        # self.fuse_state["pitch"].append(curr_noisy_state[4])
+        # self.fuse_state["yaw"].append(curr_noisy_state[5])
+        self.fuse_state["time"].append(self.time)
+
+    def set_state(self, state_dict, S: np.ndarray):
+        state_dict["x"].append(S[0])
+        state_dict["y"].append(S[1])
+        state_dict["z"].append(S[2])
+        state_dict["roll"].append(S[3])
+        state_dict["pitch"].append(S[4])
+        state_dict["yaw"].append(S[5])
+        state_dict["time"].append(self.time)
 
     def run(self):
-        # Show the plot
+
         while not rospy.is_shutdown():
             self.ax.clear()
 
@@ -108,19 +152,50 @@ class VizTrajectory:
             self.ax.plot(
                 self.gt_state["x"],
                 label="ground truth x",
-                color="r",
+                color="b",
                 linestyle="-",
             )
             self.ax.plot(
-                self.real_state["x"], label="real x", color="r", linestyle="--"
+                np.asarray(self.raw_state["x"]) - 0.2,
+                label="real x",
+                color="r",
+                linestyle="--",
+            )
+
+            self.ax.plot(
+                np.asarray(self.fuse_state["x"]) + 0.2,
+                label="fused x",
+                color="g",
+                linestyle="-.",
             )
             # self.ax.plot(self.state["y"], label="y", color="g")
             # self.ax.plot(self.state["z"], label="z", color="b")
 
+            plt.legend()
             plt.pause(0.01)
             plt.show()
             # Start the ROS spin loop
             self.rate.sleep()
+
+        # for key in self.real_state:
+        #     self.real_state[key] = self.real_state[key].tolist()
+        #     self.gt_state[key] = self.gt_state[key].tolist()
+
+        # Save self.real_state to a JSON file
+        # delete the covariance matrix from the real state
+        # self.real_state.pop("covariance", None)
+        self.gt_state.pop("covariance", None)
+        # print(self.gt_state.keys())
+
+        with open("src/posehub_ros/outputs/sim_2/real_state.json", "w") as file:
+            json.dump(self.raw_state, file)
+
+        # Save self.gt_state to a JSON file
+        with open("src/posehub_ros/outputs/sim_2/gt_state.json", "w") as file:
+            json.dump(self.gt_state, file)
+
+        with open("src/posehub_ros/outputs/sim_2/fuse_state.json", "w") as file:
+            json.dump(self.fuse_state, file)
 
 
 if __name__ == "__main__":
