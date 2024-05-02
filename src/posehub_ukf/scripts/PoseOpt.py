@@ -41,7 +41,12 @@ def main():
     # Initialize UKF
     ukf = UKF(num_sensors=6, init_pose=x0)
 
-    print(ukf.ukf.x.shape)
+    # Example of how to use the UKF
+    # for measurement in measurements: # measurements is a list of sensor readings
+    #     ukf.predict()
+    #     ukf.update(measurement)
+
+    print(ukf.observation_relative(x0))
 
 
 if __name__ == "__main__":

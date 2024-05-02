@@ -103,7 +103,7 @@ class UnscentedKalmanFilter:
         np.array
             The measurement vector
         """
-        observation = np.repeat(x[:7], self.num_sensors, axis=0)
+        observation = np.tile(x[:7], self.num_sensors)
 
         return observation
 
