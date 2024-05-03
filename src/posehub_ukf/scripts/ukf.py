@@ -76,10 +76,8 @@ class UnscentedKalmanFilter:
         dqt = qt - qt_prev
 
         if np.linalg.norm(dqt) != 0:
-            # normalize the quaternion difference
-            dqt = dqt / np.linalg.norm(dqt)
             # update the orientation based on the previous angular velocity
-            qt_next = Rot.from_quat(dqt).apply(qt)
+            qt_next = (Rot.from_quat(qt) * Rot.from_quat(dqt)).as_quat()
 
         else:
             qt_next = qt

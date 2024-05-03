@@ -68,13 +68,13 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        HoloLens:
+          Value: true
         object_1:
           Value: true
         object_2:
           Value: true
         ref_1:
-          Value: true
-        sensor_1:
           Value: true
         sensor_2:
           Value: true
@@ -88,13 +88,13 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
+          HoloLens:
+            {}
           object_1:
             {}
           object_2:
             {}
           ref_1:
-            {}
-          sensor_1:
             {}
           sensor_2:
             {}
@@ -159,7 +159,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Axes
-      Topic: /sensor_1/object_2_noisy
+      Topic: /HoloLens/object_2_noisy
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -190,7 +190,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Axes
-      Topic: /sensor_1_noisy
+      Topic: /HoloLens/object_1_noisy
       Unreliable: false
       Value: true
   Enabled: true
@@ -237,9 +237,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.30039870738983154
+      Pitch: 0.3453987240791321
       Target Frame: <Fixed Frame>
-      Yaw: 5.919935703277588
+      Yaw: 5.739927768707275
     Saved: ~
 Window Geometry:
   Displays:
@@ -258,4 +258,4 @@ Window Geometry:
     collapsed: false
   Width: 1200
   X: 59
-  Y: 95
+  Y: 58

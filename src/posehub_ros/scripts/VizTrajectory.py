@@ -121,7 +121,7 @@ class VizTrajectory:
 
         curr_noisy_state = np.random.multivariate_normal(
             curr_gt_state,
-            self.gt_state["covariance"] / 8.942 - 0.0001 * np.eye(6),
+            self.gt_state["covariance"] / 6.942 - 0.0001 * np.eye(6),
         )
 
         self.set_state(self.fuse_state, curr_noisy_state)
@@ -141,7 +141,6 @@ class VizTrajectory:
         state_dict["roll"].append(S[3])
         state_dict["pitch"].append(S[4])
         state_dict["yaw"].append(S[5])
-        state_dict["time"].append(self.time)
 
     def run(self):
 

@@ -73,7 +73,7 @@ zmq_manager_1.initialize()
 pose_graph = PoseGraph()
 pose_graph.add_sensor("h1")
 ```
-Since our communication objects are running in different threads, we need to use join the threads by calling the terminate function when we want to exit the program.
+Since our communication objects are running in different threads, we need to join the threads by calling the terminate function when we want to exit the program.
 ```python
 # join the threads
 zmq_manager_1.terminate()
@@ -86,13 +86,21 @@ The graph can be visualized by calling the `vis_graph` function in the realtime 
 
 The synthetic data generator can create "real" frame motion and noise. To use the synthetic data generator, you can run the following command in the terminal.
 ```bash
-roslaunch posehub_tools synthetic_data.launch
+roslaunch posehub_tools synthetic.launch
 ```
+For pure trajectory data, you can run the following command.
+```bash
+roslaunch posehub_tools fake_tf.launch
+```
+
 Here is how the synthetic data looks like in the rviz.
 
 <img src="docs/fake_frames.gif" width = "500"/>
 
-
+To visualize and save the synthetic trajectory data, use the ros node `posehub_tools/trajectory_visualizer.py`. The following command will save the trajectory data to the `posehub_ros/outputs` folder.
+```bash
+rosrun posehub_ros VizTrajectory.py
+```
 
 
 ## Core Features
