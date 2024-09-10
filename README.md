@@ -11,6 +11,14 @@
 PoseHub is a library that manages the transformations of different sensors and objects in the same scene and provides a unified interface for accessing and solving the spatial relationship between frames. For simplification, this package only depends on the [numpy](https://numpy.org/) and [ZeroMQ](https://zeromq.org/) package. The idea is inspired by the [tf library](https://wiki.ros.org/tf) and [Open3D](http://www.open3d.org/).
 
 ## Installation
+Install the dependencies
+```bash
+python=3.9
+zeromq=4.3.5
+numpy=1.26.4
+open3d=0.18.0
+```
+
 Clone the repository to the workspace.
 ```bash
 git clone https://github.com/jmz3/PoseHub.git

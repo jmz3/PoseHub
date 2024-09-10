@@ -172,13 +172,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sub_ip_1",
-        default="10.203.59.134",
+        default="10.203.232.86",
         type=str,
         help="subscriber ip address sensor 1",
     )
     parser.add_argument(
         "--sub_ip_2",
-        default="10.203.207.38",
+        default="10.203.232.86",
         type=str,
         help="subscriber ip address sensor 2",
     )
