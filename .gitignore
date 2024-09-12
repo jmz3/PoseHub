@@ -16,12 +16,12 @@ env.bak/
 *.vsix
 
 # test scripts
-**/test.py
-**/test_script.ipynb
+# **/test.py
+# **/test_script.ipynb
 
 # Jupyter Notebook
 .ipynb_checkpoints/
-**.ipynb
+# **.ipynb
 
 
 
