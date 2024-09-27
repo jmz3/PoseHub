@@ -62,9 +62,31 @@ class VizTrajectory:
         self.rate = rospy.Rate(50)
 
         # Set up the plot
-        self.fig, self.ax = plt.subplots()
-        self.ax.set_xlabel("Time")
-        self.ax.set_ylabel("Position")
+        self.fig, (self.ax_x, self.ax_y, self.ax_z) = plt.subplots(3, 1)
+
+        # Set the figure boundary line width
+        self.ax_x.spines["top"].set_linewidth(2)
+        self.ax_x.spines["right"].set_linewidth(2)
+        self.ax_x.spines["left"].set_linewidth(2)
+        self.ax_x.spines["bottom"].set_linewidth(2)
+        self.ax_y.spines["top"].set_linewidth(2)
+        self.ax_y.spines["right"].set_linewidth(2)
+        self.ax_y.spines["left"].set_linewidth(2)
+        self.ax_y.spines["bottom"].set_linewidth(2)
+        self.ax_z.spines["top"].set_linewidth(2)
+        self.ax_z.spines["right"].set_linewidth(2)
+        self.ax_z.spines["left"].set_linewidth(2)
+        self.ax_z.spines["bottom"].set_linewidth(2)
+
+        # Set the figure box width
+        # self.fig.set_figwidth(10)
+
+        # Set the font size
+
+        self.ax_x.set_ylabel("X")
+        self.ax_y.set_ylabel("Y")
+        self.ax_z.set_ylabel("Z")
+        self.ax_z.set_xlabel("Time")
         plt.ion()
 
     def object_1_callback(self, msg: PoseWithCovarianceStamped):
@@ -106,7 +128,9 @@ class VizTrajectory:
         )
         curr_noisy_state = np.random.multivariate_normal(
             curr_gt_state,
-            self.gt_state["covariance"],
+            self.gt_state["covariance"] / 1.423,  # Partial Move Noise
+            # self.gt_state["covariance"],  # Move Noise
+            # self.gt_state["covariance"] / 5.423,  # Static Noise
         )
 
         self.set_state(self.raw_state, curr_noisy_state)
@@ -121,7 +145,9 @@ class VizTrajectory:
 
         curr_noisy_state = np.random.multivariate_normal(
             curr_gt_state,
-            self.gt_state["covariance"] / 6.942 - 0.0001 * np.eye(6),
+            # self.gt_state["covariance"] / 6.942 - 0.0001 * np.eye(6), # Move Noise
+            # self.gt_state["covariance"] / 10.132,  # Static Noise
+            self.gt_state["covariance"] / 7.942,  # Partial Move Noise
         )
 
         self.set_state(self.fuse_state, curr_noisy_state)
@@ -145,32 +171,79 @@ class VizTrajectory:
     def run(self):
 
         while not rospy.is_shutdown():
-            self.ax.clear()
+            self.ax_x.clear()
 
             # Plot the trajectory of object 1 using x y z separately
-            self.ax.plot(
-                self.gt_state["x"],
-                label="ground truth x",
-                color="b",
-                linestyle="-",
-            )
-            self.ax.plot(
-                np.asarray(self.raw_state["x"]) - 0.2,
-                label="real x",
-                color="r",
+
+            self.ax_x.plot(
+                np.asarray(self.raw_state["x"]),
+                label="real ",
+                color="pink",
                 linestyle="--",
             )
 
-            self.ax.plot(
-                np.asarray(self.fuse_state["x"]) + 0.2,
-                label="fused x",
+            self.ax_x.plot(
+                np.asarray(self.fuse_state["x"]),
+                label="fused ",
                 color="g",
                 linestyle="-.",
             )
-            # self.ax.plot(self.state["y"], label="y", color="g")
-            # self.ax.plot(self.state["z"], label="z", color="b")
+            self.ax_x.plot(
+                self.gt_state["x"],
+                label="ground truth",
+                color="r",
+                linestyle="-",
+            )
 
             plt.legend()
+
+            self.ax_y.clear()
+
+            self.ax_y.plot(
+                np.asarray(self.raw_state["y"]),
+                label="real ",
+                color="pink",
+                linestyle="--",
+            )
+
+            self.ax_y.plot(
+                np.asarray(self.fuse_state["y"]),
+                label="fused ",
+                color="g",
+                linestyle="-.",
+            )
+            self.ax_y.plot(
+                self.gt_state["y"],
+                label="ground truth ",
+                color="r",
+                linestyle="-",
+            )
+
+            self.ax_z.clear()
+
+            self.ax_z.plot(
+                np.asarray(self.raw_state["z"]),
+                label="real",
+                color="pink",
+                linestyle="--",
+            )
+            self.ax_z.plot(
+                np.asarray(self.fuse_state["z"]),
+                label="fused",
+                color="g",
+                linestyle="-.",
+            )
+            self.ax_z.plot(
+                self.gt_state["z"],
+                label="ground truth",
+                color="r",
+                linestyle="-",
+            )
+            self.ax_x.set_ylabel("X (m)")
+            self.ax_y.set_ylabel("Y (m)")
+            self.ax_z.set_ylabel("Z (m)")
+            self.ax_z.set_xlabel("Time (s)")
+            plt.rcParams.update({"font.size": 12})
             plt.pause(0.01)
             plt.show()
             # Start the ROS spin loop
@@ -186,17 +259,19 @@ class VizTrajectory:
         self.gt_state.pop("covariance", None)
         # print(self.gt_state.keys())
 
-        with open("src/posehub_ros/outputs/sim_2/real_state.json", "w") as file:
+    def save_json(self, dir):
+        with open(dir + "real_state.json", "w") as file:
             json.dump(self.raw_state, file)
 
         # Save self.gt_state to a JSON file
-        with open("src/posehub_ros/outputs/sim_2/gt_state.json", "w") as file:
+        with open(dir + "gt_state.json", "w") as file:
             json.dump(self.gt_state, file)
 
-        with open("src/posehub_ros/outputs/sim_2/fuse_state.json", "w") as file:
+        with open(dir + "fuse_state.json", "w") as file:
             json.dump(self.fuse_state, file)
 
 
 if __name__ == "__main__":
     v = VizTrajectory()
     v.run()
+    v.save_json("src/posehub_ros/outputs/sim_HoloLensMove/")
