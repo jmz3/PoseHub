@@ -8,6 +8,7 @@ from scipy.spatial.transform import Rotation as Rot
 import matplotlib.pyplot as plt
 from visualize.viz_frames import axis_init
 from visualize.viz_frames import generate_frames
+import open3d as o3d
 
 
 def main(args):
@@ -19,27 +20,31 @@ def main(args):
     # initialize the pose graph
     pose_graph = PoseGraph()
 
-    # initialize the visualization code snippet
-    figure = plt.figure()
-    plt.ion()
-    plt.show()
-    ax = figure.add_subplot(projection="3d")
-    ax = axis_init(ax, 1.5, "Pose")
+
+
+
+
+    # # initialize the visualization code snippet
+    # figure = plt.figure()
+    # plt.ion()
+    # plt.show()
+    # ax = figure.add_subplot(projection="3d")
+    # ax = axis_init(ax, 1.5, "Pose")
 
     tool_1_id = args.sub_topic[0]
     tool_2_id = args.sub_topic[1]
     tool_3_id = args.sub_topic[2]
 
     sensor_1_id = "h1"
-    sensor_2_id = "h2"
+    # sensor_2_id = "h2"
 
-    frames, frame_pm = generate_frames(
-        ax=ax,
-        sensors=[sensor_1_id, sensor_2_id],
-        # sensors=[sensor_2_id],
-        objects=[tool_1_id, tool_2_id, tool_3_id],
-        axis_length=0.5,
-    )  # generate the frames for visualization,
+    # frames, frame_pm = generate_frames(
+    #     ax=ax,
+    #     sensors=[sensor_1_id, sensor_2_id],
+    #     # sensors=[sensor_2_id],
+    #     objects=[tool_1_id, tool_2_id, tool_3_id],
+    #     axis_length=0.5,
+    # )  # generate the frames for visualization,
     # the number of frames is equal to the number of sensors * objects
     # frames is a dictionary with the following structure:
     # frames = {
@@ -102,6 +107,18 @@ def main(args):
     # pose_graph.add_sensor("h1")
     # pose_graph.add_sensor("h2")
 
+    # create the visualization of the axes in the 3D space
+    o3dviz = o3d.visualization.Visualizer()
+    o3dviz.create_window()
+    frame_1 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6, origin=[1, 1, 0])
+    frame_2 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6, origin=[0, 0, 0])
+    frame_3 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6, origin=[1, -1, 0])
+    o3dviz.add_geometry(frame_1)
+    o3dviz.add_geometry(frame_2)
+    o3dviz.add_geometry(frame_3)
+    o3dviz.poll_events()
+    o3dviz.update_renderer()
+
     try:
         while True:
             # Running the main loop
@@ -121,7 +138,7 @@ def main(args):
             # else:
             #     print("poseinfo_sensor2 is empty")
 
-            # print("Time for pose graph update: ", time.time() - start_time)
+            print("Time for pose graph update: ", time.time() - start_time)
             # # send messages
 
             for topic in args_1.pub_topic:
@@ -131,6 +148,12 @@ def main(args):
                 if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
                     zmq_manager_1.send_poses(topic, pose)
 
+                    # update the visualization of the axes in the 3D space
+                    frame_1 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6, origin=pose[:3, 3])
+                    o3dviz.update_geometry(frame_1)
+                    o3dviz.poll_events()
+                    o3dviz.update_renderer()
+
             # for topic in args_2.pub_topic:
             #     # transfer the topic from bytes to string
             #     pose = pose_graph.get_transform("h2", topic, solver_method="BFS")
@@ -139,30 +162,14 @@ def main(args):
 
             print("edges after graph search: ", pose_graph.edges)
 
-            pose_graph.viz_graph_update(
-                frames=frames,
-                frame_primitive=frame_pm,
-                world_frame_id="ref_1",
-                frame_type=1,
-            )
 
-            plt.pause(0.001)
 
-            # # test update poses
-            # try:
-            #     tool1_pose = poseinfo_sensor1["artool"][0]
-            #     print(tool1_pose[:3,3],Rot.from_matrix(tool1_pose[:3,:3]).as_quat())
-            #     move = np.identity(4)
-            #     move[:3,:3] = Rot.from_euler("zxy", [20, 55, 36], degrees=True).as_matrix()
-            #     move[:3,3] = np.array([0.01, 0.02, 0.03])
-            #     zmq_manager_1.send_poses("phantom", tool1_pose@move)
-            # except:
-            #     pass
 
     except KeyboardInterrupt:
         zmq_manager_1.terminate()
         # zmq_manager_2.terminate()
-        plt.ioff()
+        # plt.ioff()
+        o3dviz.destroy_window()
 
 
 if __name__ == "__main__":
