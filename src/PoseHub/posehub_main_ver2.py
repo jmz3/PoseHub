@@ -110,12 +110,22 @@ def main(args):
     # create the visualization of the axes in the 3D space
     o3dviz = o3d.visualization.Visualizer()
     o3dviz.create_window()
+
+
     frame_1 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6, origin=[1, 1, 0])
     frame_2 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6, origin=[0, 0, 0])
     frame_3 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6, origin=[1, -1, 0])
     o3dviz.add_geometry(frame_1)
     o3dviz.add_geometry(frame_2)
     o3dviz.add_geometry(frame_3)
+
+    camera_handle = o3dviz.get_view_control()
+    camera_handle.set_lookat([0, 0, 0])
+    camera_handle.set_front([0, 0, 1])
+    camera_handle.set_up([1, -1, 0])
+    camera_handle.set_zoom(1.5)
+    view_params = camera_handle.convert_to_pinhole_camera_parameters()
+
     o3dviz.poll_events()
     o3dviz.update_renderer()
 
@@ -126,6 +136,13 @@ def main(args):
             # receive messages
             poseinfo_sensor1 = zmq_manager_1.receive_poses()
             # poseinfo_sensor2 = zmq_manager_2.receive_poses()
+            camera_handle = o3dviz.get_view_control()
+            camera_handle.set_lookat([0, 0, 0])
+            camera_handle.set_front([0, 0, 1])
+            camera_handle.set_up([1, -1, 0])
+            camera_handle.set_zoom(1.5)
+            o3dviz.poll_events()
+            o3dviz.update_renderer()
 
             if len(poseinfo_sensor1) != 0:
                 pose_graph.update_graph("h1", poseinfo_sensor1)
@@ -146,13 +163,25 @@ def main(args):
 
                 pose = pose_graph.get_transform("h1", topic, solver_method="BFS")
                 if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
+                    print("pose for frame 1: ", pose)
                     zmq_manager_1.send_poses(topic, pose)
 
                     # update the visualization of the axes in the 3D space
-                    frame_1 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6, origin=pose[:3, 3])
-                    o3dviz.update_geometry(frame_1)
-                    o3dviz.poll_events()
-                    o3dviz.update_renderer()
+                    if topic == tool_1_id:
+                        # o3dviz.remove_geometry(frame_1)
+                        # frame_1 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6, origin=pose[:3, 3])
+                        # frame_1.transform(pose)
+                        # o3dviz.add_geometry(frame_1)
+                        position_increment = pose[:3, 3] - frame_1.get_center()
+                        frame_1.translate(position_increment)
+                        o3dviz.update_geometry(frame_1)
+                        camera_handle = o3dviz.get_view_control()
+                        camera_handle.set_lookat([0, 0, 0])
+                        camera_handle.set_front([0, 0, 1])
+                        camera_handle.set_up([1, -1, 0])
+                        camera_handle.set_zoom(1.5)
+                        o3dviz.poll_events()
+                        o3dviz.update_renderer()
 
             # for topic in args_2.pub_topic:
             #     # transfer the topic from bytes to string
