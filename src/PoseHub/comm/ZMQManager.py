@@ -5,6 +5,7 @@ import threading
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 
+
 class ZMQManager:
     def __init__(self, sub_ip, sub_port, pub_port, sub_topic, pub_topic, sensor_name):
         self.sub_ip = sub_ip
@@ -60,7 +61,9 @@ class ZMQManager:
                     topic, message = sub_socket.recv_multipart()
                     self.update_SubPoses(topic.decode("utf-8"), message.decode("utf-8"))
                 except zmq.Again:
-                    print(f"{self.sensor_name}: No message received within our timeout period")
+                    print(
+                        f"{self.sensor_name}: No message received within our timeout period"
+                    )
                 except KeyboardInterrupt:
                     self.connected = False
             else:
@@ -153,7 +156,7 @@ class ZMQManager:
         if transform_mtx.shape != (4, 4):
             print("The size of the transformation matrix is not 4x4")
             return
-        
+
         # # convert to unity convention
         quat = Rot.from_matrix(transform_mtx[:3, :3]).as_quat().reshape(1, -1)
         trans = transform_mtx[:3, 3].reshape(1, -1)
@@ -161,4 +164,4 @@ class ZMQManager:
         new_pose = np.hstack([trans, quat])
         # Convert to string
         new_pose_str = ",".join(str(num) for num in new_pose.flatten())
-        self.pub_messages[topic] = new_pose_str + ',1'
+        self.pub_messages[topic] = new_pose_str + ",1"

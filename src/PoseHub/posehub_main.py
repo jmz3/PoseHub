@@ -97,7 +97,7 @@ def main(args):
     )
 
     zmq_manager_1.initialize()
-    zmq_manager_2.initialize()
+    # zmq_manager_2.initialize()
 
     # pose_graph.add_sensor("h1")
     # pose_graph.add_sensor("h2")
@@ -108,18 +108,18 @@ def main(args):
             start_time = time.time()
             # receive messages
             poseinfo_sensor1 = zmq_manager_1.receive_poses()
-            poseinfo_sensor2 = zmq_manager_2.receive_poses()
+            # poseinfo_sensor2 = zmq_manager_2.receive_poses()
 
             if len(poseinfo_sensor1) != 0:
                 pose_graph.update_graph("h1", poseinfo_sensor1)
             else:
                 print("poseinfo_sensor1 is empty")
 
-            if len(poseinfo_sensor2) != 0:
-                pose_graph.update_graph("h2", poseinfo_sensor2)
-                # print("poseinfo: ", poseinfo_sensor2)
-            else:
-                print("poseinfo_sensor2 is empty")
+            # if len(poseinfo_sensor2) != 0:
+            #     pose_graph.update_graph("h2", poseinfo_sensor2)
+            #     # print("poseinfo: ", poseinfo_sensor2)
+            # else:
+            #     print("poseinfo_sensor2 is empty")
 
             # print("Time for pose graph update: ", time.time() - start_time)
             # # send messages
@@ -131,11 +131,11 @@ def main(args):
                 if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
                     zmq_manager_1.send_poses(topic, pose)
 
-            for topic in args_2.pub_topic:
-                # transfer the topic from bytes to string
-                pose = pose_graph.get_transform("h2", topic, solver_method="BFS")
-                if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
-                    zmq_manager_2.send_poses(topic, pose)
+            # for topic in args_2.pub_topic:
+            #     # transfer the topic from bytes to string
+            #     pose = pose_graph.get_transform("h2", topic, solver_method="BFS")
+            #     if pose is not None and np.linalg.norm(pose[:3, 3]) > 0.00001:
+            #         zmq_manager_2.send_poses(topic, pose)
 
             print("edges after graph search: ", pose_graph.edges)
 
@@ -161,7 +161,7 @@ def main(args):
 
     except KeyboardInterrupt:
         zmq_manager_1.terminate()
-        zmq_manager_2.terminate()
+        # zmq_manager_2.terminate()
         plt.ioff()
 
 
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sub_ip_1",
-        default="10.203.232.86",
+        default="10.0.0.108",
         type=str,
         help="subscriber ip address sensor 1",
     )
