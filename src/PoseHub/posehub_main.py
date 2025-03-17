@@ -69,14 +69,14 @@ def main(args):
         sensor_name=sensor_1_id,
     )  # args for h1 sensor
 
-    args_2 = argparse.Namespace(
-        sub_ip=args.sub_ip_2,
-        sub_port="5581",
-        pub_port="5580",
-        sub_topic=[tool_1_id, tool_2_id, tool_3_id],
-        pub_topic=[tool_1_id, tool_2_id, tool_3_id],
-        sensor_name=sensor_2_id,
-    )  # args for h2 sensor
+    # args_2 = argparse.Namespace(
+    #     sub_ip=args.sub_ip_2,
+    #     sub_port="5581",
+    #     pub_port="5580",
+    #     sub_topic=[tool_1_id, tool_2_id, tool_3_id],
+    #     pub_topic=[tool_1_id, tool_2_id, tool_3_id],
+    #     sensor_name=sensor_2_id,
+    # )  # args for h2 sensor
 
     zmq_manager_1 = ZMQManager(
         sub_ip=args_1.sub_ip,
@@ -87,14 +87,14 @@ def main(args):
         sensor_name=args_1.sensor_name,
     )
 
-    zmq_manager_2 = ZMQManager(
-        sub_ip=args_2.sub_ip,
-        sub_port=args_2.sub_port,
-        pub_port=args_2.pub_port,
-        sub_topic=args_2.sub_topic,
-        pub_topic=args_2.pub_topic,
-        sensor_name=args_2.sensor_name,
-    )
+    # zmq_manager_2 = ZMQManager(
+    #     sub_ip=args_2.sub_ip,
+    #     sub_port=args_2.sub_port,
+    #     pub_port=args_2.pub_port,
+    #     sub_topic=args_2.sub_topic,
+    #     pub_topic=args_2.pub_topic,
+    #     sensor_name=args_2.sensor_name,
+    # )
 
     zmq_manager_1.initialize()
     # zmq_manager_2.initialize()
@@ -142,7 +142,7 @@ def main(args):
             pose_graph.viz_graph_update(
                 frames=frames,
                 frame_primitive=frame_pm,
-                world_frame_id="reference_1",
+                world_frame_id="ref_1",
                 frame_type=1,
             )
 
@@ -176,21 +176,21 @@ if __name__ == "__main__":
         type=str,
         help="subscriber ip address sensor 1",
     )
-    parser.add_argument(
-        "--sub_ip_2",
-        default="10.203.232.86",
-        type=str,
-        help="subscriber ip address sensor 2",
-    )
+    # parser.add_argument(
+    #     "--sub_ip_2",
+    #     default="10.203.232.86",
+    #     type=str,
+    #     help="subscriber ip address sensor 2",
+    # )
     parser.add_argument(
         "--sub_topic",
-        default=["artool", "reference_1", "phantom"],
+        default=["artool", "ref_1", "phantom"],
         type=str,
         help="subscriber topics",
     )
     parser.add_argument(
         "--pub_topic",
-        default=["artool", "reference_1", "phantom"],
+        default=["artool", "ref_1", "phantom"],
         type=str,
         help="publisher topic",
     )
