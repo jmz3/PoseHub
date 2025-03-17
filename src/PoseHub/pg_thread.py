@@ -1,49 +1,49 @@
-import time
 import numpy as np
 from PyQt5 import QtCore
-from pose_graph import PoseGraph
-from comm.ZMQManager import ZMQManager  # Adjust the import as needed
+from comm.ZMQManager import ZMQManager
 
 
 class PoseGraphThread(QtCore.QThread):
-    # Signal that emits the updated PoseGraph (or just the necessary data)
+    # This thread no longer emits pose_updated itself.
     pose_updated = QtCore.pyqtSignal(object)
 
-    def __init__(self, args, parent=None):
+    def __init__(self, args, manager, parent=None):
         super(PoseGraphThread, self).__init__(parent)
         self.args = args
+        self.manager = manager  # Shared central manager
         self.running = True
-        self.pose_graph = PoseGraph()
-
-        # Initialize your ZMQManagers for different sensors
+        self.tracking_active = False  # New flag: initially tracking is off.
+        self.sensor_name = getattr(self.args, "sensor_name", "h1")
         self.zmq_manager = ZMQManager(
-            sub_ip=args.sub_ip_1,
-            sub_port="5588",
-            pub_port="5589",
-            sub_topic=args.sub_topic,
-            pub_topic=args.pub_topic,
-            sensor_name="h1",
+            sub_ip=self.args.sub_ip_1,
+            sub_port=self.args.sub_port,
+            pub_port=self.args.pub_port,
+            sub_topic=self.args.sub_topic,
+            pub_topic=self.args.pub_topic,
+            sensor_name=self.sensor_name,
         )
         self.zmq_manager.initialize()
 
     def run(self):
         while self.running:
-            # Receive poses and update the graph
-            poseinfo = self.zmq_manager.receive_poses()
-            if poseinfo:
-                self.pose_graph.update_graph("h1", poseinfo)
+            if self.tracking_active:
+                # Receive pose info via ZMQ.
+                poseinfo = self.zmq_manager.receive_poses()
+                if poseinfo:
+                    # Forward the update to the central PoseGraphManager.
+                    self.manager.update_pose(self.sensor_name, poseinfo)
+                    # Optionally, send out poses if needed.
+                    for topic in self.args.pub_topic:
+                        pose = self.manager.get_pose_graph().get_transform(
+                            self.sensor_name, topic, solver_method="BFS"
+                        )
+                        if pose is not None and np.linalg.norm(pose[:3, 3]) > 1e-5:
+                            self.zmq_manager.send_poses(topic, pose)
+            self.msleep(10)  # Adjust update rate as needed.
 
-                # Optionally, send out poses after processing:
-                for topic in self.args.pub_topic:
-                    pose = self.pose_graph.get_transform(
-                        "h1", topic, solver_method="BFS"
-                    )
-                    if pose is not None and np.linalg.norm(pose[:3, 3]) > 1e-5:
-                        self.zmq_manager.send_poses(topic, pose)
-
-            # Emit updated pose graph to update visualization
-            self.pose_updated.emit(self.pose_graph)
-            time.sleep(0.01)  # adjust sleep time to control update rate
+    def start_tracking(self):
+        # This method activates the update process.
+        self.tracking_active = True
 
     def stop(self):
         self.running = False

@@ -39,3 +39,6 @@ catkin_workspace/
 *.catkin_tools/
 ExpData/
 **/**.json
+**/test
+
+**test**
