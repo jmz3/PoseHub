@@ -1,6 +1,6 @@
 import numpy as np
 from PyQt5 import QtCore
-from comm.ZMQManager import ZMQManager
+from comm.ZMQManager import ZMQManager, ZMQManagerNoParallel
 
 
 class PoseGraphThread(QtCore.QThread):
@@ -14,25 +14,30 @@ class PoseGraphThread(QtCore.QThread):
         self.running = True
         self.tracking_active = False  # New flag: initially tracking is off.
         self.sensor_name = getattr(self.args, "sensor_name", "h1")
-        self.zmq_manager = ZMQManager(
-            sub_ip=self.args.sub_ip_1,
+        self.zmq_manager = ZMQManagerNoParallel(
+            sub_ip=self.args.sub_ip,
             sub_port=self.args.sub_port,
             pub_port=self.args.pub_port,
             sub_topic=self.args.sub_topic,
             pub_topic=self.args.pub_topic,
             sensor_name=self.sensor_name,
         )
-        self.zmq_manager.initialize()
 
     def run(self):
+        self.zmq_manager.initialize()
+        print("Receiving poses...")
         while self.running:
             if self.tracking_active:
                 # Receive pose info via ZMQ.
-                poseinfo = self.zmq_manager.receive_poses()
+                try:
+                    poseinfo = self.zmq_manager.receive_poses()
+                except Exception as e:
+                    print(f"Exception in receive_poses: {e}")
+                    break
                 if poseinfo:
                     # Forward the update to the central PoseGraphManager.
                     self.manager.update_pose(self.sensor_name, poseinfo)
-                    # Optionally, send out poses if needed.
+
                     for topic in self.args.pub_topic:
                         pose = self.manager.get_pose_graph().get_transform(
                             self.sensor_name, topic, solver_method="BFS"
@@ -42,11 +47,11 @@ class PoseGraphThread(QtCore.QThread):
             self.msleep(10)  # Adjust update rate as needed.
 
     def start_tracking(self):
-        # This method activates the update process.
         self.tracking_active = True
 
     def stop(self):
         self.running = False
+        self.msleep(100)
         self.zmq_manager.terminate()
         self.quit()
         self.wait()

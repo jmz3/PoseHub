@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import sys
+import pyqtgraph.opengl as gl
 
 
 def parse_mtl(mtl_path):
@@ -68,3 +69,43 @@ def parse_obj_groups(obj_path):
         groups_tri[mat] = np.array(tri_faces, dtype=np.int32)
     vertices = np.array(vertices, dtype=np.float32)
     return vertices, groups_tri, mtl_file
+
+
+def load_instance_from_obj(obj_path, translate: np.ndarray = None, rotate: float = 0):
+    """
+    load an instance from an OBJ file as a GLMeshItem, with its material properties.
+    """
+
+    try:
+        vertices, groups_tri, mtl_file = parse_obj_groups(obj_path)
+    except Exception as e:
+        print(f"Failed to load OBJ file:\n{e}")
+        return None
+
+    materials = {}
+    if mtl_file:
+        mtl_path = os.path.join(os.path.dirname(obj_path), mtl_file)
+        materials = parse_mtl(mtl_path)
+    default_color = (0.8, 0.8, 0.8, 1.0)
+
+    inst_items = []
+    for mat, faces in groups_tri.items():
+        frame_mesh = gl.MeshData(vertexes=vertices, faces=faces)
+        frame_item = gl.GLMeshItem(
+            meshdata=frame_mesh, smooth=True, drawFaces=True, drawEdges=False
+        )
+        color = materials.get(mat, default_color)
+        frame_item.setColor(color)
+        if translate is not None:
+            frame_item.translate(*translate)
+        if rotate != 0:
+            frame_item.rotate(rotate, 0, 1, 0)
+        inst_items.append(frame_item)
+
+    print(f"Loaded instance from {obj_path}")
+    return inst_items
+
+
+if __name__ == "__main__":
+    obj_path = "/home/jeremy/Research/PoseHub/ExpData/tinker.obj"
+    load_instance_from_obj(obj_path)

@@ -37,8 +37,8 @@ def main():
         }
     """
     )
-
-    main_window = PoseGraphGUI()
+    tool_names = ["object_1", "object_2", "ref_1"]
+    main_window = PoseGraphGUI(tool_names, ref_frame="Camera")
     main_window.show()
     sys.exit(app.exec_())
 
