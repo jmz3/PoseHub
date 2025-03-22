@@ -8,15 +8,19 @@
 <a href="https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity"><img src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" alt="Maintenance"></a>
 </div>
 
-PoseHub is a library that manages the transformations of different sensors and objects in the same scene and provides a unified interface for accessing and solving the spatial relationship between frames. For simplification, this package only depends on the [numpy](https://numpy.org/) and [ZeroMQ](https://zeromq.org/) package. The idea is inspired by the [tf library](https://wiki.ros.org/tf) and [Open3D](http://www.open3d.org/).
+PoseHub is a library that manages the transformations of different sensors and objects in the same scene and provides a unified interface for accessing and solving the spatial relationship between frames. For simplification, this package only depends on the [numpy](https://numpy.org/) and [ZeroMQ](https://zeromq.org/) package. The GUI is implemented using [PyQt](https://riverbankcomputing.com/software/pyqt/intro#:~:text=What%20is%20PyQt%3F,and%20contain%20over%201%2C000%20classes.), and the 3D visualization is powered by [PyQtGraph](https://pyqtgraph.readthedocs.io/en/latest/index.html). The idea is inspired by the [tf library](https://wiki.ros.org/tf) and [Open3D](http://www.open3d.org/).
 
 ## Installation
-Install the dependencies
+Install the dependencies using anaconda.
 ```bash
 python=3.9
 zeromq=4.3.5
 numpy=1.26.4
 open3d=0.18.0
+pyqt=5.15.9
+pyqt5-sip=12.12.2
+pyqtgraph=0.13.7
+qt-main=5.15.15
 ```
 
 Clone the repository to the workspace.
@@ -24,13 +28,13 @@ Clone the repository to the workspace.
 git clone https://github.com/jmz3/PoseHub.git
 ```
 
-If you want to use the ros features of the package, you need to build the ros-related packages, namely `posehub_ros` and `posehub_tools`. 
+If you want to use the ros features of the package, you need to build the ros-related packages, namely `posehub_tools`. 
 ```bash
 cd PoseHub
 catkin build
 ```
 
-But if you only want to use the core features of the package, no more installation is needed. You can directly use the package by importing the `PoseGraph` class.
+But if you only want to use the core features of the package, no more ros installation is needed. You can directly use the package by importing the `PoseGraph` class.
 
 
 ## Structure Explained
@@ -38,8 +42,8 @@ The package is organized as follows:
 ```
 src
 ├── PoseHub       # ros-free core implementation of the posehub
-├── posehub_ros   # ros wrapper for the posehub
-└── posehub_tools # synthetic data generator for testing
+├── posehub_ufk   # unscented kalman filter for pose estimation
+└── posehub_tools # synthetic data generator in ros for testing
 ```
 
 
@@ -109,6 +113,22 @@ To visualize and save the synthetic trajectory data, use the ros node `posehub_t
 ```bash
 rosrun posehub_ros VizTrajectory.py
 ```
+
+## GUI
+Old version:
+
+<video controls width="500">
+    <source src="docs/scenegraph-oldgui.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
+
+New version:
+
+<video controls width="500">
+    <source src="docs/scenegraph-newgui.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 
 
 ## Core Features
