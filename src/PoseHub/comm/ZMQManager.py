@@ -255,7 +255,7 @@ class ZMQManagerNoParallel:
         trans = transform_mtx[:3, 3].reshape(1, -1)
         new_pose = np.hstack([trans, quat])
         new_pose_str = ",".join(str(num) for num in new_pose.flatten())
-        self.pub_messages[topic] = new_pose_str + ",1"
+        self.pub_messages[topic] = new_pose_str + ",1" + ",0.005, 0.05, 0.02"
         # Immediately send the message.
         self.pub_socket.send_multipart(
             [topic.encode("utf-8"), self.pub_messages[topic].encode("utf-8")]

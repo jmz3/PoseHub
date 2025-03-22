@@ -46,9 +46,9 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         config_widget = QtWidgets.QWidget()
         config_layout = QtWidgets.QFormLayout(config_widget)
 
-        self.ip_edit = QtWidgets.QLineEdit("127.0.0.1")
-        self.sub_port_edit = QtWidgets.QLineEdit("5555")
-        self.pub_port_edit = QtWidgets.QLineEdit("5556")
+        self.ip_edit = QtWidgets.QLineEdit("10.0.0.99")
+        self.sub_port_edit = QtWidgets.QLineEdit("5588")
+        self.pub_port_edit = QtWidgets.QLineEdit("5589")
         self.sensor_name_edit = QtWidgets.QLineEdit("Camera")
 
         config_layout.addRow("Subscriber IP:", self.ip_edit)
@@ -180,6 +180,7 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
             if tool in self.tool_labels:
                 new_pos = t + np.array([0, -2, 0])
                 self.tool_labels[tool].setData(pos=new_pos, text=tool)
+                print(f"Updated tool {tool} at {t}.")
 
         # Update sensor instances and their GLTextItems.
         for sensor in self.sensor_names:
