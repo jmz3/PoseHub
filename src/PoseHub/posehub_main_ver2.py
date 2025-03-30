@@ -6,8 +6,6 @@ import time
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 import matplotlib.pyplot as plt
-from visualize.viz_frames import axis_init
-from visualize.viz_frames import generate_frames
 import open3d as o3d
 
 

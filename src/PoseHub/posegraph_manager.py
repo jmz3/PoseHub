@@ -1,6 +1,7 @@
-# posegraph_manager.py
 from PyQt5 import QtCore
-from pose_graph import PoseGraph
+
+# from pose_graph import PoseGraph
+from pose_graph_optimize import PoseGraph
 
 
 class PoseGraphManager(QtCore.QObject):
