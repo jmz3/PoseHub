@@ -66,8 +66,8 @@ def main(args):
 
     args_1 = argparse.Namespace(
         sub_ip=args.sub_ip_1,
-        sub_port="5588",
-        pub_port="5589",
+        sub_port="5555",
+        pub_port="5556",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
         pub_topic=[tool_1_id, tool_2_id, tool_3_id],
         sensor_name=sensor_1_id,
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sub_ip_1",
-        default="10.0.0.108",
+        default="127.0.0.1",
         type=str,
         help="subscriber ip address sensor 1",
     )
@@ -194,7 +194,7 @@ if __name__ == "__main__":
     # )
     parser.add_argument(
         "--sub_topic",
-        default=["artool", "ref_1", "phantom"],
+        default=["object_1", "object_2", "ref_1"],
         type=str,
         help="subscriber topics",
     )

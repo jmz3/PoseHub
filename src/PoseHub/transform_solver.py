@@ -40,8 +40,8 @@ class TransformSolver:
                 s: o for s, o in self.edges[node].items() if o[1]
             }  # filter out inactive edges, i.e. edges with isActive=False, o is the object value in the dict
 
-        self.optimize()
-        self._update_edges_from_optimization()
+        # self.optimize()
+        # self._update_edges_from_optimization()
 
     def _update_edges_from_optimization(self):
         """
@@ -107,11 +107,11 @@ class TransformSolver:
             return False
 
         if parent_id not in self.nodes or child_id not in self.nodes:
-            return ([], np.eye(4))
+            return []
         if dfs_helper(parent_id):
             T_acc = self._accumulate_transform(path)
             return (path, T_acc)
-        return ([], np.eye(4))
+        return []
 
     def BFS(self, parent_id: str, child_id: str) -> tuple:
         """
@@ -131,7 +131,7 @@ class TransformSolver:
                 if neighbor not in visited:
                     queue.append((neighbor, curr_path + [neighbor]))
                     visited.add(neighbor)
-        return ([], np.eye(4))
+        return []
 
     def SET(self, parent_id: str, child_id: str) -> tuple:
         """
@@ -153,7 +153,7 @@ class TransformSolver:
                         T_acc = self._accumulate_transform(path)
                         return (path, T_acc)
         print("No path found using SET method.")
-        return ([], np.eye(4))
+        return []
 
     def _accumulate_transform(self, path: list) -> np.ndarray:
         """
