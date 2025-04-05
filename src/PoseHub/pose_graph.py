@@ -15,7 +15,7 @@ class FrameType(Enum):
 class PoseGraph:
     """
     PoseGraph class stores the transformation between all the sensors and the objects in the scene
-    the graph is a directled represented as a list of nodes and a list of edges
+    the graph is a directed representation as a list of nodes and a list of edges
 
     """
 
