@@ -4,13 +4,12 @@ import matplotlib.pyplot as plt
 from transform_solver import TransformSolver
 from typing import Type, Dict, List, Optional, Tuple
 from enum import Enum
-
+from DataRecorder import DataRecorder
 
 class FrameType(Enum):
     OBJECT = 1
     SENSOR = 2
     # Add more types as needed
-
 
 class PoseGraph:
     """
@@ -19,7 +18,7 @@ class PoseGraph:
 
     """
 
-    def __init__(self):
+    def __init__(self,path):
         """
         Initialize the PoseGraph class, the graph is undirected and the edges are represented as an adjacency list
 
@@ -32,6 +31,7 @@ class PoseGraph:
                               edges[parent_id] = {child_id, [transformation, isActive]}
             sensor_id: list[str] of all the sensor ids
             object_id: list[str] of all the object ids
+            data_recorder = the object of class DataRecorder which updates itself everytime we connect new edges to the graph
 
         """
         self.nodes = []
@@ -39,6 +39,9 @@ class PoseGraph:
         self.sensor_id = []
         self.object_id = []
         self.transform_solver = TransformSolver(self.nodes, self.edges)
+        self.data_recorder = DataRecorder(path)
+        #First clear the entire data recorder
+        self.data_recorder.clear()
 
     def _add_node(self, node_id):
         """
@@ -259,6 +262,8 @@ class PoseGraph:
         # TODO: need to consider the case when the object is no longer visible for the sensor
         # Is it necessary to remove the edge between the sensor and the object?
         # Is a flag enough to indicate if the transformation is active?
+
+        self.data_recorder.update(self.nodes,self.edges) #Pass nodes and edges to the data recorder everytime you update
 
     def get_transform(
         self, parent_id: str, child_id: str, solver_method: str = "SET"
