@@ -9,10 +9,6 @@ import matplotlib.pyplot as plt
 from visualize.viz_frames import axis_init
 from visualize.viz_frames import generate_frames
 
-#Imported the data recorder
-from DataRecorder import DataRecorder
-
-
 def main(args):
     """
     Main function
@@ -20,8 +16,8 @@ def main(args):
     global memoryBuffer
     memoryBuffer = []
     # initialize the pose graph
-    pose_graph = PoseGraph()
-    recorder = DataRecorder("graph_save_test.json",pose_graph) #Initialize data recorder object
+    save_path = "graph_save.json" #Change this if needed
+    pose_graph = PoseGraph(save_path)
 
     # Initialize the visualization code snippet
     figure = plt.figure()
@@ -150,13 +146,12 @@ def main(args):
                 frame_type=1,
             )
 
-            plt.pause(0.1)
+            #Saving a snapshot of the graph
             current_time = time.time()
-            duration = current_time - start_time
-            print("saving to json")
-            recorder.save(duration)
-            break
-
+            timestamp = current_time - start_time
+            pose_graph.data_recorder.snapshot(pose_graph.get_transform,timestamp)
+            plt.pause(0.1)
+            
             # # test update poses
             # try:
             #     tool1_pose = poseinfo_sensor1["artool"][0]
@@ -169,7 +164,9 @@ def main(args):
             #     pass 
             
     except KeyboardInterrupt:
-        #Example of saving data
+        #Saving data
+        print('Dumping data to JSON')
+        pose_graph.data_recorder.save()
         zmq_manager_1.terminate()
         # zmq_manager_2.terminate()
         plt.ioff()
