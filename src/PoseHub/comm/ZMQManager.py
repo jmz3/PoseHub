@@ -247,7 +247,13 @@ class ZMQManagerNoParallel:
                     tool_info[topic] = [pose_mtx, twist[7] == 1]
         return tool_info
 
-    def send_poses(self, topic, transform_mtx: np.ndarray):
+    def send_poses(
+        self,
+        topic,
+        transform_mtx: np.ndarray,
+        isActive: bool = True,
+        uncertainty: np.ndarray = [0.005, 0.05, 0.02],
+    ):
         if transform_mtx.shape != (4, 4):
             print("Transformation matrix is not 4x4")
             return
@@ -255,7 +261,13 @@ class ZMQManagerNoParallel:
         trans = transform_mtx[:3, 3].reshape(1, -1)
         new_pose = np.hstack([trans, quat])
         new_pose_str = ",".join(str(num) for num in new_pose.flatten())
-        self.pub_messages[topic] = new_pose_str + ",1" + ",0.005, 0.05, 0.02"
+        self.pub_messages[topic] = (
+            new_pose_str
+            + ","
+            + str(int(isActive))
+            + f",{uncertainty[0]},{uncertainty[1]},{uncertainty[2]}"
+        )
+        # print(f"Sending pose for topic {topic}: {self.pub_messages[topic]}")
         # Immediately send the message.
         self.pub_socket.send_multipart(
             [topic.encode("utf-8"), self.pub_messages[topic].encode("utf-8")]

@@ -72,7 +72,7 @@ def query_and_send(tfBuffer, publisher, sensor_frame, object_frames):
 
 
 def main():
-    rospy.init_node("tf_to_zmq_modular")
+    rospy.init_node("tf_to_zmq_modular", anonymous=True)
 
     # Retrieve parameters from the ROS parameter server
     sensor_frame = rospy.get_param("~sensor_frame", "Camera")

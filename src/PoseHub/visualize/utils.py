@@ -91,6 +91,11 @@ def load_instance_from_obj(obj_path, translate: np.ndarray = None, rotate: float
     inst_items = []
     for mat, faces in groups_tri.items():
         frame_mesh = gl.MeshData(vertexes=vertices, faces=faces)
+
+        # Scale the mesh to 1/10th of its size
+        for vertex in frame_mesh.vertexes():
+            vertex *= 0.5
+
         frame_item = gl.GLMeshItem(
             meshdata=frame_mesh, smooth=True, drawFaces=True, drawEdges=False
         )

@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 from visualize.viz_frames import axis_init
 from visualize.viz_frames import generate_frames
 
-#Imported the data recorder
-from DataRecorder import DataRecorder
+# Imported the data recorder
+from PoseHub.data_recorder import DataRecorder
 
 
 def main(args):
@@ -21,7 +21,9 @@ def main(args):
     memoryBuffer = []
     # initialize the pose graph
     pose_graph = PoseGraph()
-    recorder = DataRecorder("graph_save_test.json",pose_graph) #Initialize data recorder object
+    recorder = DataRecorder(
+        "graph_save_test.json", pose_graph
+    )  # Initialize data recorder object
 
     # Initialize the visualization code snippet
     figure = plt.figure()
@@ -166,10 +168,10 @@ def main(args):
             #     move[:3,3] = np.array([0.01, 0.02, 0.03])
             #     zmq_manager_1.send_poses("phantom", tool1_pose@move)
             # except:
-            #     pass 
-            
+            #     pass
+
     except KeyboardInterrupt:
-        #Example of saving data
+        # Example of saving data
         zmq_manager_1.terminate()
         # zmq_manager_2.terminate()
         plt.ioff()
