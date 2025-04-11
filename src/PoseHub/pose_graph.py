@@ -310,17 +310,17 @@ class PoseGraph:
             )
 
             if path is None:
-                print("No path is found between the parent node and the child node")
+                # print("No path is found between the parent node and the child node")
                 return None
 
             if len(path) == 1:
-                print(
-                    "The parent node and the child node are directly connected, please check the input"
-                )
+                # print(
+                #     "The parent node and the child node are directly connected, please check the input"
+                # )
                 return None
 
             else:
-                # print("The path between the parent node and the child node is: ", path)
+                print(f"The path between the {parent_id} and {child_id} is: {path}")
                 for idx in range(len(path) - 1):
                     transform = transform @ self.edges[path[idx]][path[idx + 1]][0]
 
@@ -335,7 +335,7 @@ class PoseGraph:
             # The edge between the parent node and the child node is in the graph and is active
             # directly return the transformation
             print(
-                "The edge between the parent node and the child node is active.\nDirectly return the transformation"
+                f"The edge between {parent_id} and {child_id} is active.\nDirectly return the transformation"
             )
             transform = self.edges[parent_id][child_id][0]
             return transform

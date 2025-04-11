@@ -4,7 +4,11 @@ from PyQt5 import QtCore, QtWidgets
 import pyqtgraph.opengl as gl
 from scipy.spatial.transform import Rotation as Rot
 from utils import load_instance_from_obj
-from posegraph_manager import PoseGraphManager
+from utils import ZMQConfig
+
+# from posegraph_manager import PoseGraphManager
+
+from posegraph_manager_opt import PoseGraphManager
 from zmq_thread import ZMQThread
 from time import time
 
@@ -31,6 +35,8 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         self.config = config
         self.ref_frame = self.tool_names[0] if self.tool_names else ""
         self.pose_graph_manager = PoseGraphManager()
+        self.pose_graph_manager.start()
+        self.pose_graph_manager.pose_graph_updated.connect(self.on_pose_updated)
         self.obj_file_path = "/home/jeremy/Research/PoseHub/ExpData/tinker.obj"
         self.sensor_obj_generated = False
         self.sensor_names = []
@@ -125,16 +131,7 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         pub_port = self.pub_port_edit.text()
         sensor_name = self.sensor_name_edit.text()
 
-        class Args:
-            pass
-
-        args = Args()
-        args.sub_ip = ip
-        args.sub_topic = self.tool_names  # using tool names as topics
-        args.pub_topic = self.tool_names
-        args.sub_port = sub_port
-        args.pub_port = pub_port
-        args.sensor_name = sensor_name
+        args = ZMQConfig(ip, sub_port, pub_port, self.tool_names, sensor_name)
 
         new_thread = ZMQThread(args, self.pose_graph_manager)
         self.worker_threads.append(new_thread)
@@ -201,10 +198,11 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         # Update sensor instances and their GLTextItems.
         for sensor in self.sensor_names:
             transform = pose_graph.get_transform(
-                self.ref_frame, sensor, solver_method="BFS"
+                sensor, self.ref_frame, solver_method="BFS"
             )
             if transform is None:
                 continue
+            transform = np.linalg.inv(transform)
             t = transform[:3, 3]
             R_mat = transform[:3, :3]
             rot = Rot.from_matrix(R_mat)
@@ -220,25 +218,27 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
             if sensor_data is not None:
                 for sensor_item in sensor_data["items"]:
                     sensor_item.resetTransform()
-                    sensor_item.translate(t[0], t[1], t[2])
                     if angle_deg > 1e-3:
                         sensor_item.rotate(angle_deg, axis[0], axis[1], axis[2])
+                    sensor_item.translate(t[0], t[1], t[2])
+
             if sensor in self.sensor_labels:
                 new_pos = t + np.array([0, -2, 0])
                 self.sensor_labels[sensor].setData(pos=new_pos, text=sensor)
 
         # calculate the update frequency
-        self.current_time = time()
-        elapsed_time = self.current_time - self.last_time
-        self.last_time = self.current_time
-        print(f"Update frequency: {1 / elapsed_time:.2f} Hz")
+        # self.current_time = time()
+        # elapsed_time = self.current_time - self.last_time
+        # self.last_time = self.current_time
+        # print(f"Update frequency: {1 / elapsed_time:.2f} Hz")
 
     def closeEvent(self, event):
         for thread in self.worker_threads:
             thread.stop()
-        final_pose_graph = self.pose_graph_manager.get_pose_graph()
+        self.pose_graph_manager.stop()
+        final_pose_graph = self.pose_graph_manager.pose_graph
         # Save the pose graph data to a file.
-        pose_graph_file = "scenegraph_0409_1.json"
+        pose_graph_file = "scenegraph_0410_2.json"
         final_pose_graph.save_to_json(pose_graph_file)
         print(f"Pose graph data saved to {pose_graph_file}.")
         self.pose_graph_manager.deleteLater()

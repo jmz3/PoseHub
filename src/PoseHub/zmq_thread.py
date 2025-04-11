@@ -1,14 +1,18 @@
 import numpy as np
 from PyQt5 import QtCore
 from comm.ZMQManager import ZMQManager, ZMQManagerNoParallel
-from posegraph_manager import PoseGraphManager
+
+from posegraph_manager_opt import PoseGraphManager
+
+# from posegraph_manager import PoseGraphManager
+from utils import ZMQConfig
 
 
 class ZMQThread(QtCore.QThread):
     # This thread no longer emits pose_updated itself.
     pose_updated = QtCore.pyqtSignal(object)
 
-    def __init__(self, args, pg_manager: PoseGraphManager, parent=None):
+    def __init__(self, args: ZMQConfig, pg_manager: PoseGraphManager, parent=None):
         super(ZMQThread, self).__init__(parent)
         self.args = args
         self.pg_manager = pg_manager  # Shared central manager
@@ -29,18 +33,17 @@ class ZMQThread(QtCore.QThread):
         print("Receiving poses...")
         while self.running:
             if self.tracking_active:
-                # Receive pose info via ZMQ.
                 try:
                     poseinfo = self.zmq_manager.receive_poses()
                 except Exception as e:
                     print(f"Exception in receive_poses: {e}")
                     break
                 if poseinfo:
-                    # Forward the update to the central PoseGraphManager.
+                    # Use the new optimized manager.
                     self.pg_manager.update_pose(self.sensor_name, poseinfo)
 
                     for topic in self.args.pub_topic:
-                        pose = self.pg_manager.get_pose_graph().get_transform(
+                        pose = self.pg_manager.pose_graph.get_transform(
                             self.sensor_name, topic, solver_method="BFS"
                         )
                         if pose is not None and np.linalg.norm(pose[:3, 3]) > 1e-5:

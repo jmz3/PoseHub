@@ -185,6 +185,20 @@ def load_instance_from_obj(obj_path, translate: np.ndarray = None, rotate: float
     return inst_items
 
 
+class ZMQConfig:
+    """
+    Configuration for ZMQ communication.
+    """
+
+    def __init__(self, sub_ip, sub_port, pub_port, topic, sensor_name):
+        self.sub_ip = sub_ip
+        self.sub_topic = topic  # using tool names as topics
+        self.pub_topic = topic
+        self.sub_port = sub_port
+        self.pub_port = pub_port
+        self.sensor_name = sensor_name
+
+
 if __name__ == "__main__":
     obj_path = "/home/jeremy/Research/PoseHub/ExpData/tinker.obj"
     load_instance_from_obj(obj_path)

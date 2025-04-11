@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Dict, Optional, Tuple
+import time
 from enum import Enum
 from copy import deepcopy
 from scipy.optimize import least_squares
@@ -7,12 +8,6 @@ from scipy.optimize import least_squares
 from utils import hat, se3_exp, se3_log
 from path_find import PathFind
 from data_recorder import DataRecorder
-
-
-class FrameType(Enum):
-    OBJECT = 1
-    SENSOR = 2
-    # Add more types as needed
 
 
 class PoseGraph:
@@ -321,8 +316,11 @@ class PoseGraph:
         x0 = np.zeros(total_vars)
 
         # Solve for the updates
-        sol = least_squares(residual_func, x0, verbose=0)
-
+        # print the optimization time comsumption
+        # print("Optimization started...")
+        curr_time = time.time()
+        sol = least_squares(residual_func, x0, verbose=0, ftol=1e-6, xtol=1e-6)
+        print(f"Optimization takes {time.time() - curr_time:.3f} seconds. ")
         # Extract optimized sensor poses.
         sensor_opt = {}
         for s in self.sensor_id:
@@ -390,7 +388,7 @@ class PoseGraph:
         #     return None
 
         if self.edges_opt == {}:
-            print("The graph is not optimized yet, please run global_optimize() first")
+            # print("The graph is not optimized yet, please run global_optimize() first")
             return None
 
         if parent_id == child_id:
@@ -416,6 +414,9 @@ class PoseGraph:
                 return self.edges_opt["object_" + parent_id]["sensor_" + child_id][0]
             elif ("object_" + child_id) in self.object_id:
                 # object -> object
+                # print("parent_id: ", parent_id)
+                # print("child_id: ", child_id)
+                # print("edges_opt: ", self.edges_opt["object_" + parent_id])
                 return self.edges_opt["object_" + parent_id]["object_" + child_id][0]
             else:
                 RuntimeWarning(
