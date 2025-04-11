@@ -238,7 +238,7 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         self.pose_graph_manager.stop()
         final_pose_graph = self.pose_graph_manager.pose_graph
         # Save the pose graph data to a file.
-        pose_graph_file = "scenegraph_0410_2.json"
+        pose_graph_file = "scenegraph_0411_quant_holo_ndi_atracsys.json"
         final_pose_graph.save_to_json(pose_graph_file)
         print(f"Pose graph data saved to {pose_graph_file}.")
         self.pose_graph_manager.deleteLater()

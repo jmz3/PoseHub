@@ -7,6 +7,8 @@ from posegraph_manager_opt import PoseGraphManager
 # from posegraph_manager import PoseGraphManager
 from utils import ZMQConfig
 
+from numpy import random
+
 
 class ZMQThread(QtCore.QThread):
     # This thread no longer emits pose_updated itself.
@@ -46,19 +48,26 @@ class ZMQThread(QtCore.QThread):
                         pose = self.pg_manager.pose_graph.get_transform(
                             self.sensor_name, topic, solver_method="BFS"
                         )
+                        uncertainty = random.uniform(-1, 1, 3)
+                        uncertainty = uncertainty * 0.01 + np.array([0.02, 0.02, 0.07])
+                        # normalize the uncertainty
+                        uncertainty /= np.linalg.norm(uncertainty)
+                        uncertainty *= 0.03
+
                         if pose is not None and np.linalg.norm(pose[:3, 3]) > 1e-5:
                             self.zmq_manager.send_poses(
                                 topic,
                                 pose,
                                 isActive=True,
-                                uncertainty=[0.05, 0.05, 0.2],
+                                uncertainty=uncertainty.tolist(),  # simple graph search has no uncertainty
+                                # using random values for testing
                             )
                         else:
                             self.zmq_manager.send_poses(
                                 topic,
                                 np.identity(4),
                                 isActive=False,
-                                uncertainty=[0.05, 0.05, 0.2],
+                                uncertainty=[0.02, 0.02, 0.1],
                             )
             self.msleep(10)  # Adjust update rate as needed.
 

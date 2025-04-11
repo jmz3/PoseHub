@@ -37,6 +37,7 @@ class PoseGraph:
         """
         self.nodes = []
         self.edges = dict([])
+        self.edges_opt = dict([])
         self.sensor_id = []
         self.object_id = []
         self.transform_solver = TransformSolver(self.nodes, self.edges)
@@ -261,7 +262,8 @@ class PoseGraph:
         # TODO: need to consider the case when the object is no longer visible for the sensor
         # Is it necessary to remove the edge between the sensor and the object?
         # Is a flag enough to indicate if the transformation is active?
-        self.data_recorder.update(self.edges, self.edges)
+        self.complete_scene()
+        self.data_recorder.update(self.edges, self.edges_opt)
 
     def get_transform(
         self, parent_id: str, child_id: str, solver_method: str = "SET"
@@ -344,6 +346,36 @@ class PoseGraph:
             raise RuntimeError("Unexpected error when getting the transformation")
 
         return None
+
+    def complete_scene(self):
+        """
+        Complete the scene by get_transform() for all the nodes in the graph
+        and store them in edges_opt
+        """
+        self.edges_opt = self.edges.copy()
+        for parent_id in self.sensor_id:
+            for child_id in self.object_id:
+                if (
+                    child_id not in self.edges_opt[parent_id]
+                    or self.edges_opt[parent_id][child_id][1] == False
+                ):
+                    transform = self.get_transform(parent_id, child_id)
+                    if transform is not None:
+                        self.edges_opt[parent_id][child_id] = [transform, True]
+                        self.edges_opt[child_id][parent_id] = [
+                            np.linalg.inv(transform),
+                            True,
+                        ]
+                    else:
+                        # Add the edge to edges_opt with identity transformation
+                        self.edges_opt[parent_id][child_id] = [
+                            np.identity(4),
+                            False,
+                        ]
+                        self.edges_opt[child_id][parent_id] = [
+                            np.identity(4),
+                            False,
+                        ]
 
     def save_to_json(self, filename: str):
         """
