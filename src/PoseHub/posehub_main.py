@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from visualize.viz_frames import axis_init
 from visualize.viz_frames import generate_frames
 
-#Imported the data recorder
+# Imported the data recorder
 from DataRecorder import DataRecorder
 
 
@@ -21,7 +21,9 @@ def main(args):
     memoryBuffer = []
     # initialize the pose graph
     pose_graph = PoseGraph()
-    recorder = DataRecorder("graph_save_test.json",pose_graph) #Initialize data recorder object
+    recorder = DataRecorder(
+        "graph_save_test.json", pose_graph
+    )  # Initialize data recorder object
 
     # Initialize the visualization code snippet
     figure = plt.figure()
@@ -66,8 +68,8 @@ def main(args):
 
     args_1 = argparse.Namespace(
         sub_ip=args.sub_ip_1,
-        sub_port="5588",
-        pub_port="5589",
+        sub_port="5555",
+        pub_port="5556",
         sub_topic=[tool_1_id, tool_2_id, tool_3_id],
         pub_topic=[tool_1_id, tool_2_id, tool_3_id],
         sensor_name=sensor_1_id,
@@ -156,6 +158,12 @@ def main(args):
             print("saving to json")
             recorder.save(duration)
             break
+            plt.pause(0.1)
+            current_time = time.time()
+            duration = current_time - start_time
+            print("saving to json")
+            recorder.save(duration)
+            break
 
             # # test update poses
             # try:
@@ -166,10 +174,10 @@ def main(args):
             #     move[:3,3] = np.array([0.01, 0.02, 0.03])
             #     zmq_manager_1.send_poses("phantom", tool1_pose@move)
             # except:
-            #     pass 
-            
+            #     pass
+
     except KeyboardInterrupt:
-        #Example of saving data
+        # Example of saving data
         zmq_manager_1.terminate()
         # zmq_manager_2.terminate()
         plt.ioff()
@@ -182,7 +190,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sub_ip_1",
-        default="10.0.0.108",
+        default="127.0.0.1",
         type=str,
         help="subscriber ip address sensor 1",
     )
@@ -194,7 +202,7 @@ if __name__ == "__main__":
     # )
     parser.add_argument(
         "--sub_topic",
-        default=["artool", "ref_1", "phantom"],
+        default=["object_1", "object_2", "ref_1"],
         type=str,
         help="subscriber topics",
     )

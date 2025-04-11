@@ -1,6 +1,6 @@
 import sys
 from PyQt5 import QtCore, QtWidgets
-from visualize.posehub_gui import PoseGraphGUI
+from posehub_gui import PoseGraphGUI, NetworkConfig
 
 
 def main():
@@ -38,8 +38,11 @@ def main():
     """
     )
     # tool_names = ["object_1", "object_2", "ref_1"]
-    tool_names = ["artool", "reference_1", "phantom"]
-    main_window = PoseGraphGUI(tool_names, ref_frame="Camera")
+    # config = NetworkConfig("127.0.0.1", "5555", "5556", "Camera")
+
+    tool_names = ["Probe", "StaticRef", "Anatomy"]
+    config = NetworkConfig("192.168.0.103", "5588", "5589", "Holo_1")
+    main_window = PoseGraphGUI(tool_names, config, ref_frame="Camera")
     main_window.show()
     sys.exit(app.exec_())
 

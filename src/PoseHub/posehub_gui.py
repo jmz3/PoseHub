@@ -3,21 +3,40 @@ import numpy as np
 from PyQt5 import QtCore, QtWidgets
 import pyqtgraph.opengl as gl
 from scipy.spatial.transform import Rotation as Rot
-from .utils import load_instance_from_obj
-from posegraph_manager import PoseGraphManager
-from pg_thread import PoseGraphThread
+from utils import load_instance_from_obj
+from utils import ZMQConfig
+
+# from posegraph_manager import PoseGraphManager
+
+from posegraph_manager_opt import PoseGraphManager
+from zmq_thread import ZMQThread
+from time import time
+
+
+class NetworkConfig:
+    def __init__(
+        self, ip="127.0.0.1", sub_port="5555", pub_port="5556", sensor_name="Camera"
+    ):
+        self.IP = ip
+        self.SUB_PORT = sub_port
+        self.PUB_PORT = pub_port
+        self.SENSOR_NAME = sensor_name
 
 
 class PoseGraphGUI(QtWidgets.QMainWindow):
-    def __init__(self, tool_names, ref_frame="Hololens", parent=None):
+    def __init__(
+        self, tool_names, config: NetworkConfig, ref_frame="Hololens", parent=None
+    ):
         super().__init__(parent)
         self.setWindowTitle("PoseHub Visualization")
         self.resize(1200, 700)
 
         self.tool_names = tool_names
-        # Initially, set the reference frame to the first tool.
+        self.config = config
         self.ref_frame = self.tool_names[0] if self.tool_names else ""
-        self.manager = PoseGraphManager()
+        self.pose_graph_manager = PoseGraphManager()
+        self.pose_graph_manager.start()
+        self.pose_graph_manager.pose_graph_updated.connect(self.on_pose_updated)
         self.obj_file_path = "/home/jeremy/Research/PoseHub/ExpData/tinker.obj"
         self.sensor_obj_generated = False
         self.sensor_names = []
@@ -26,7 +45,9 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         self.sensor_labels = {}
 
         self.initUI()
-        self.manager.pose_graph_updated.connect(self.on_pose_updated)
+        self.pose_graph_manager.pose_graph_updated.connect(self.on_pose_updated)
+        self.last_time = time()
+        self.current_time = time()
 
     def initUI(self):
         main_widget = QtWidgets.QWidget()
@@ -39,17 +60,17 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         self.gl_view.opts["distance"] = 100
         main_layout.addWidget(self.gl_view, 4)
         grid = gl.GLGridItem()
-        grid.scale(20, 20, 5)
+        grid.scale(1, 1, 1)
         self.gl_view.addItem(grid)
 
         # Right side: Configuration panel.
         config_widget = QtWidgets.QWidget()
         config_layout = QtWidgets.QFormLayout(config_widget)
 
-        self.ip_edit = QtWidgets.QLineEdit("10.0.0.99")
-        self.sub_port_edit = QtWidgets.QLineEdit("5588")
-        self.pub_port_edit = QtWidgets.QLineEdit("5589")
-        self.sensor_name_edit = QtWidgets.QLineEdit("Camera")
+        self.ip_edit = QtWidgets.QLineEdit(self.config.IP)
+        self.sub_port_edit = QtWidgets.QLineEdit(self.config.SUB_PORT)
+        self.pub_port_edit = QtWidgets.QLineEdit(self.config.PUB_PORT)
+        self.sensor_name_edit = QtWidgets.QLineEdit(self.config.SENSOR_NAME)
 
         config_layout.addRow("Subscriber IP:", self.ip_edit)
         config_layout.addRow("Subscriber Port:", self.sub_port_edit)
@@ -83,7 +104,7 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
     def load_tool_instances(self, obj_path):
         self.tool_instance_data = []
         for tool in self.tool_names:
-            base_translation = np.random.uniform(-20, 20, size=3).astype(np.float32)
+            base_translation = np.random.uniform(-5, 5, size=3).astype(np.float32)
             base_rotation = 0
             inst_items = load_instance_from_obj(
                 obj_path, base_translation, base_rotation
@@ -110,18 +131,9 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         pub_port = self.pub_port_edit.text()
         sensor_name = self.sensor_name_edit.text()
 
-        class Args:
-            pass
+        args = ZMQConfig(ip, sub_port, pub_port, self.tool_names, sensor_name)
 
-        args = Args()
-        args.sub_ip = ip
-        args.sub_topic = self.tool_names  # using tool names as topics
-        args.pub_topic = self.tool_names
-        args.sub_port = sub_port
-        args.pub_port = pub_port
-        args.sensor_name = sensor_name
-
-        new_thread = PoseGraphThread(args, self.manager)
+        new_thread = ZMQThread(args, self.pose_graph_manager)
         self.worker_threads.append(new_thread)
         print(f"Added connection for sensor: {sensor_name}")
 
@@ -174,21 +186,23 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
             )
             for item in self.tool_instance_data[idx]["items"]:
                 item.resetTransform()
-                item.translate(t[0], t[1], t[2])
                 if angle_deg > 1e-3:
                     item.rotate(angle_deg, axis[0], axis[1], axis[2])
+                item.translate(t[0], t[1], t[2])
+
             if tool in self.tool_labels:
-                new_pos = t + np.array([0, -2, 0])
+                new_pos = t + np.array([0, -0.1, 0])
                 self.tool_labels[tool].setData(pos=new_pos, text=tool)
-                print(f"Updated tool {tool} at {t}.")
+                # print(f"Updated tool {tool} at {t}.")
 
         # Update sensor instances and their GLTextItems.
         for sensor in self.sensor_names:
             transform = pose_graph.get_transform(
-                self.ref_frame, sensor, solver_method="BFS"
+                sensor, self.ref_frame, solver_method="BFS"
             )
             if transform is None:
                 continue
+            transform = np.linalg.inv(transform)
             t = transform[:3, 3]
             R_mat = transform[:3, :3]
             rot = Rot.from_matrix(R_mat)
@@ -204,17 +218,30 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
             if sensor_data is not None:
                 for sensor_item in sensor_data["items"]:
                     sensor_item.resetTransform()
-                    sensor_item.translate(t[0], t[1], t[2])
                     if angle_deg > 1e-3:
                         sensor_item.rotate(angle_deg, axis[0], axis[1], axis[2])
+                    sensor_item.translate(t[0], t[1], t[2])
+
             if sensor in self.sensor_labels:
                 new_pos = t + np.array([0, -2, 0])
                 self.sensor_labels[sensor].setData(pos=new_pos, text=sensor)
 
+        # calculate the update frequency
+        # self.current_time = time()
+        # elapsed_time = self.current_time - self.last_time
+        # self.last_time = self.current_time
+        # print(f"Update frequency: {1 / elapsed_time:.2f} Hz")
+
     def closeEvent(self, event):
         for thread in self.worker_threads:
             thread.stop()
-        self.manager.deleteLater()
+        self.pose_graph_manager.stop()
+        final_pose_graph = self.pose_graph_manager.pose_graph
+        # Save the pose graph data to a file.
+        pose_graph_file = "scenegraph_0410_2.json"
+        final_pose_graph.save_to_json(pose_graph_file)
+        print(f"Pose graph data saved to {pose_graph_file}.")
+        self.pose_graph_manager.deleteLater()
         event.accept()
 
 

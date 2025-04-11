@@ -1,45 +1,37 @@
-class TransformSolver:
-    def __init__(self, nodes: list, edges: dict):
-        """
-        Initialize the TransformSolver class
+from scipy.optimize import least_squares
+import numpy as np
+from utils import hat, se3_exp, se3_log
 
-        Members:
-            graph: PoseGraph, the pose graph
+
+class PathFind:
+    def __init__(self, nodes: list = None, edges: dict = None):
+        """
+        Initialize the PathFind class that finds viable paths between nodes in a graph.
+
+        Param:
+        -------
+        nodes: list of nodes in the graph.
+        edges: dictionary representing the edges of the graph.
         """
 
         self.nodes = nodes
         self.edges = edges
 
-    def update(self, nodes: list, edges: dict):
-        """
-        Update the graph for the node and edge information
-
-        Args:
-        ----------
-            nodes: list, all the nodes in the graph, each node is a sensor or an object
-            edges: dict, described as an adjacency list, all the edges in the graph, each edge is a transformation between a sensor and an object
-                        e.g. edges = { parent_id: {child_id: [transformation (4x4), isActive]},
-                                        parent_id: {child_id: [transformation (4x4), isActive]},
-                                        parent_id: {child_id: [transformation (4x4), isActive]},
-                                        ...}
-                             nodes = [[property, id_0], [property, id_1], [property, id_2], ...]
-                        e.g. nodes = [[sensor, "sensor_id"], [obejct, "object_id"], [object, "object_id"]]
-
-
-        """
-        self.nodes = nodes.copy()
-        self.edges = edges.copy()
-
-        for node in self.nodes:
-            self.edges[node] = {
-                s: o for s, o in self.edges[node].items() if o[1]
-            }  # filter out inactive edges, i.e. edges with isActive=False, o is the object value in the dict
-
-    def solve(self, parent_id: str, child_id: str, method: str = "SET"):
+    def solve(
+        self,
+        parent_id: str,
+        child_id: str,
+        nodes: list,
+        edges: dict,
+        method: str = "SET",
+    ):
         """
         Solve the transformation between the parent node and the child node.
         Returns a tuple (path, accumulative_transformation).
         """
+        self.nodes = nodes
+        self.edges = edges
+
         if method == "SET":
             result = self.SET(parent_id, child_id)
         elif method == "DFS":
@@ -73,8 +65,9 @@ class TransformSolver:
         if parent_id not in self.nodes or child_id not in self.nodes:
             return []
         if dfs_helper(parent_id):
-            return path
-        return None
+            T_acc = self._accumulate_transform(path)
+            return (path, T_acc)
+        return []
 
     def BFS(self, parent_id: str, child_id: str) -> tuple:
         """
@@ -88,12 +81,13 @@ class TransformSolver:
         while queue:
             node_id, curr_path = queue.pop(0)
             if node_id == child_id:
-                return curr_path
+                T_acc = self._accumulate_transform(curr_path)
+                return (curr_path, T_acc)
             for neighbor in self.edges.get(node_id, {}):
                 if neighbor not in visited:
                     queue.append((neighbor, curr_path + [neighbor]))
                     visited.add(neighbor)
-        return None
+        return []
 
     def SET(self, parent_id: str, child_id: str) -> tuple:
         """
@@ -112,7 +106,21 @@ class TransformSolver:
                         and self.edges[parent_id][visible_object][1]
                     ):
                         path.extend([visible_object, sensor, child_id])
-
-                        return path
+                        T_acc = self._accumulate_transform(path)
+                        return (path, T_acc)
         print("No path found using SET method.")
-        return None
+        return []
+
+    def _accumulate_transform(self, path: list) -> np.ndarray:
+        """
+        Given a list of nodes forming a path, compute the accumulative transformation.
+        For each consecutive pair (node_i, node_{i+1}), multiply the edge transformation.
+        """
+        T = np.eye(4)
+        for i in range(len(path) - 1):
+            if path[i] in self.edges and path[i + 1] in self.edges[path[i]]:
+                T = T @ self.edges[path[i]][path[i + 1]][0]
+            else:
+                print(f"Edge missing between {path[i]} and {path[i+1]}.")
+                return np.eye(4)
+        return T
