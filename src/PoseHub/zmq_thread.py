@@ -1,11 +1,12 @@
+import os
+import json
+import time
 import numpy as np
 from PyQt5 import QtCore
 from comm.ZMQManager import ZMQManager, ZMQManagerNoParallel
-
-from posegraph_manager_opt import PoseGraphManager
-
-# from posegraph_manager import PoseGraphManager
+from posegraph_manager import PoseGraphManager
 from utils import ZMQConfig
+from numpy import random
 
 
 class ZMQThread(QtCore.QThread):
@@ -27,6 +28,8 @@ class ZMQThread(QtCore.QThread):
             pub_topic=self.args.pub_topic,
             sensor_name=self.sensor_name,
         )
+        # Create a dictionary to cache poseinfo with timestamp keys.
+        self.cached_poses = {}
 
     def run(self):
         self.zmq_manager.initialize()
@@ -39,6 +42,11 @@ class ZMQThread(QtCore.QThread):
                     print(f"Exception in receive_poses: {e}")
                     break
                 if poseinfo:
+                    # Append poseinfo with current timestamp key into the cache.
+                    timestamp = str(time.time())
+                    serialized_poseinfo = self.serialize_poseinfo(poseinfo)
+                    self.cached_poses[timestamp] = serialized_poseinfo
+
                     # Use the new optimized manager.
                     self.pg_manager.update_pose(self.sensor_name, poseinfo)
 
@@ -46,19 +54,25 @@ class ZMQThread(QtCore.QThread):
                         pose = self.pg_manager.pose_graph.get_transform(
                             self.sensor_name, topic, solver_method="BFS"
                         )
+                        uncertainty = random.uniform(-1, 1, 3)
+                        uncertainty = uncertainty * 0.01 + np.array([0.02, 0.02, 0.07])
+                        # Normalize the uncertainty
+                        uncertainty /= np.linalg.norm(uncertainty)
+                        uncertainty *= 0.03
+
                         if pose is not None and np.linalg.norm(pose[:3, 3]) > 1e-5:
                             self.zmq_manager.send_poses(
                                 topic,
                                 pose,
                                 isActive=True,
-                                uncertainty=[0.05, 0.05, 0.2],
+                                uncertainty=uncertainty.tolist(),
                             )
                         else:
                             self.zmq_manager.send_poses(
                                 topic,
                                 np.identity(4),
                                 isActive=False,
-                                uncertainty=[0.05, 0.05, 0.2],
+                                uncertainty=[0.02, 0.02, 0.1],
                             )
             self.msleep(10)  # Adjust update rate as needed.
 
@@ -69,5 +83,35 @@ class ZMQThread(QtCore.QThread):
         self.running = False
         self.msleep(100)
         self.zmq_manager.terminate()
+        # Dump the cached poses to disk before quitting.
+        self.dump_cached_poses()
         self.quit()
         self.wait()
+
+    def serialize_poseinfo(self, poseinfo):
+        """
+        Serialize the poseinfo dictionary to a JSON-compatible format.
+        """
+        serialized_poseinfo = {}
+        for topic, pose in poseinfo.items():
+            serialized_poseinfo[topic] = [pose[0].tolist(), pose[1]]
+
+        return serialized_poseinfo
+
+    def dump_cached_poses(self):
+        """
+        Dump the cached poses dictionary to a JSON file in a folder named after sensor_name.
+        """
+        folder_name = "data/" + self.sensor_name
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+        # Use current time as part of the filename to avoid overwriting previous dumps.
+        filename = os.path.join(
+            folder_name, f"pose_record_{time.strftime('%Y%m%d_%H%M%S')}.json"
+        )
+        try:
+            with open(filename, "w") as f:
+                json.dump(self.cached_poses, f, indent=4)
+            print(f"Cached poses dumped to {filename}")
+        except Exception as e:
+            print(f"Error dumping cached poses: {e}")

@@ -270,9 +270,6 @@ class ZMQManagerNoParallel:
             + str(int(isActive))
             + f",{uncertainty[0]},{uncertainty[1]},{uncertainty[2]}"
         )
-        # print(f"Sending pose for topic {topic}: {self.pub_messages[topic]}")
-        # print(f"Sending pose for topic {topic}: {self.pub_messages[topic]}")
-        # Immediately send the message.
         self.pub_socket.send_multipart(
             [topic.encode("utf-8"), self.pub_messages[topic].encode("utf-8")]
         )

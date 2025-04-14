@@ -6,9 +6,7 @@ from scipy.spatial.transform import Rotation as Rot
 from utils import load_instance_from_obj
 from utils import ZMQConfig
 
-# from posegraph_manager import PoseGraphManager
-
-from posegraph_manager_opt import PoseGraphManager
+from posegraph_manager import PoseGraphManager
 from zmq_thread import ZMQThread
 from time import time
 
@@ -25,7 +23,12 @@ class NetworkConfig:
 
 class PoseGraphGUI(QtWidgets.QMainWindow):
     def __init__(
-        self, tool_names, config: NetworkConfig, ref_frame="Hololens", parent=None
+        self,
+        tool_names,
+        config: NetworkConfig,
+        ref_frame="Hololens",
+        parent=None,
+        filename="posegraph.json",
     ):
         super().__init__(parent)
         self.setWindowTitle("PoseHub Visualization")
@@ -38,6 +41,7 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         self.pose_graph_manager.start()
         self.pose_graph_manager.pose_graph_updated.connect(self.on_pose_updated)
         self.obj_file_path = "/home/jeremy/Research/PoseHub/ExpData/tinker.obj"
+        self.pose_graph_file = filename
         self.sensor_obj_generated = False
         self.sensor_names = []
         self.worker_threads = []
@@ -141,8 +145,8 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         if sensor_name not in self.sensor_names:
             self.sensor_names.append(sensor_name)
             frame_items = load_instance_from_obj(self.obj_file_path)
-            for item in frame_items:
-                self.gl_view.addItem(item)
+            # for item in frame_items:
+            #     self.gl_view.addItem(item)
             if not hasattr(self, "sensor_instance_data"):
                 self.sensor_instance_data = {}
             self.sensor_instance_data[sensor_name] = {
@@ -238,9 +242,8 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         self.pose_graph_manager.stop()
         final_pose_graph = self.pose_graph_manager.pose_graph
         # Save the pose graph data to a file.
-        pose_graph_file = "scenegraph_0410_2.json"
-        final_pose_graph.save_to_json(pose_graph_file)
-        print(f"Pose graph data saved to {pose_graph_file}.")
+        final_pose_graph.save_to_json(self.pose_graph_file)
+        print(f"Pose graph data saved to {self.pose_graph_file}.")
         self.pose_graph_manager.deleteLater()
         event.accept()
 

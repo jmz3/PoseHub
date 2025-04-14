@@ -1,6 +1,8 @@
 import sys
+import cProfile, pstats
 from PyQt5 import QtCore, QtWidgets
-from posehub_gui import PoseGraphGUI, NetworkConfig
+from posehub_gui import PoseGraphGUI
+from utils import NetworkConfig
 
 
 def main():
@@ -35,21 +37,28 @@ def main():
             background-color: #3c3c3c;
             color: white;
         }
-    """
+        """
     )
-    # tool_names = ["object_1", "object_2", "ref_1"]
-    # config = NetworkConfig("127.0.0.1", "5555", "5556", "Camera")
+    tool_names = ["object_1", "object_2", "ref_1"]
+    config = NetworkConfig("127.0.0.1", "5555", "5556", "Camera")
 
-    tool_names = ["Probe", "StaticRef", "Anatomy"]
-    config = NetworkConfig("192.168.0.105", "5586", "5587", "Holo_1")
-    main_window = PoseGraphGUI(
-        tool_names,
-        config,
-        ref_frame="Camera",
-        filename="scenegraph_0411_quant_square_1.json",
-    )
+    main_window = PoseGraphGUI(tool_names, config, ref_frame="Camera")
     main_window.show()
-    sys.exit(app.exec_())
+
+    # Start the profiler here.
+    profiler = cProfile.Profile()
+    profiler.enable()
+
+    exit_code = app.exec_()
+
+    # Disable profiling once the GUI is closed
+    profiler.disable()
+
+    # Print the top 20 functions by cumulative time to stdout.
+    stats = pstats.Stats(profiler).sort_stats("cumulative")
+    stats.print_stats(20)
+
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":
