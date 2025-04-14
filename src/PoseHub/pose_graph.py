@@ -5,6 +5,7 @@ from transform_solver import TransformSolver
 from typing import Type, Dict, List, Optional, Tuple
 from enum import Enum
 from data_recorder import DataRecorder
+from copy import deepcopy
 
 
 class FrameType(Enum):
@@ -352,14 +353,16 @@ class PoseGraph:
         Complete the scene by get_transform() for all the nodes in the graph
         and store them in edges_opt
         """
-        self.edges_opt = self.edges.copy()
+        self.edges_opt = deepcopy(self.edges)
         for parent_id in self.sensor_id:
             for child_id in self.object_id:
                 if (
                     child_id not in self.edges_opt[parent_id]
                     or self.edges_opt[parent_id][child_id][1] == False
                 ):
-                    transform = self.get_transform(parent_id, child_id)
+                    transform = self.get_transform(
+                        parent_id, child_id, solver_method="BFS"
+                    )
                     if transform is not None:
                         self.edges_opt[parent_id][child_id] = [transform, True]
                         self.edges_opt[child_id][parent_id] = [

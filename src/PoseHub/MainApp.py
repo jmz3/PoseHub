@@ -41,8 +41,13 @@ def main():
     # config = NetworkConfig("127.0.0.1", "5555", "5556", "Camera")
 
     tool_names = ["Probe", "StaticRef", "Anatomy"]
-    config = NetworkConfig("192.168.0.103", "5588", "5589", "Holo_1")
-    main_window = PoseGraphGUI(tool_names, config, ref_frame="Camera")
+    config = NetworkConfig("192.168.0.105", "5586", "5587", "Holo_1")
+    main_window = PoseGraphGUI(
+        tool_names,
+        config,
+        ref_frame="Camera",
+        filename="scenegraph_0411_quant_square_1.json",
+    )
     main_window.show()
     sys.exit(app.exec_())
 
