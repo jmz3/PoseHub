@@ -1,6 +1,7 @@
 import sys
 from PyQt5 import QtCore, QtWidgets
-from posehub_gui import PoseGraphGUI, NetworkConfig
+from posehub_gui import PoseGraphGUI
+from utils import NetworkConfig
 
 
 def main():
@@ -46,7 +47,7 @@ def main():
         tool_names,
         config,
         ref_frame="Camera",
-        filename="scenegraph_0411_quant_square_1.json",
+        filename="scenegraph_0411_quant_square_1",
     )
     main_window.show()
     sys.exit(app.exec_())

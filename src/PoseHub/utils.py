@@ -184,6 +184,16 @@ def load_instance_from_obj(obj_path, translate: np.ndarray = None, rotate: float
     print(f"Loaded instance from {obj_path}")
     return inst_items
 
+def serialize_poseinfo(poseinfo):
+    """
+    Serialize the poseinfo dictionary to a JSON-compatible format.
+    """
+    serialized_poseinfo = {}
+    for topic, pose in poseinfo.items():
+        serialized_poseinfo[topic] = [pose[0].tolist(), pose[1]]
+
+    return serialized_poseinfo
+
 
 class ZMQConfig:
     """
@@ -197,6 +207,15 @@ class ZMQConfig:
         self.sub_port = sub_port
         self.pub_port = pub_port
         self.sensor_name = sensor_name
+
+class NetworkConfig:
+    def __init__(
+        self, ip="127.0.0.1", sub_port="5555", pub_port="5556", sensor_name="Camera"
+    ):
+        self.IP = ip
+        self.SUB_PORT = sub_port
+        self.PUB_PORT = pub_port
+        self.SENSOR_NAME = sensor_name
 
 
 if __name__ == "__main__":

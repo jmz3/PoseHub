@@ -1,11 +1,10 @@
 import numpy as np
 from typing import Dict, Optional, Tuple
 import time
-from enum import Enum
 from copy import deepcopy
 from scipy.optimize import least_squares
 
-from utils import hat, se3_exp, se3_log
+from utils import se3_exp, se3_log
 from path_find import PathFind
 from data_recorder import DataRecorder
 

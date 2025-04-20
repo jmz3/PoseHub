@@ -51,11 +51,13 @@ class DataRecorder:
 
     def save(self, filename: str):
         # Prevent accidentally overwriting an existing file.
-        if os.path.exists(filename):
+        stamped_filename = filename + f"_{time.strftime('%Y%m%d_%H%M%S')}" + ".json"
+
+        if os.path.exists(stamped_filename):
             raise FileExistsError(
-                f"File {filename} already exists. Please choose a different filename."
+                f"File {stamped_filename} already exists. Please choose a different filename."
             )
 
         # Process the stored data: assume that each record has both "raw_graph" and "opt_graph"
-        with open(filename, "w") as file:
+        with open(stamped_filename, "w") as file:
             json.dump(self.data, file, indent=4)

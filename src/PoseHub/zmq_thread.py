@@ -5,7 +5,7 @@ import numpy as np
 from PyQt5 import QtCore
 from comm.ZMQManager import ZMQManager, ZMQManagerNoParallel
 from posegraph_manager import PoseGraphManager
-from utils import ZMQConfig
+from utils import ZMQConfig, serialize_poseinfo
 from numpy import random
 
 
@@ -44,8 +44,7 @@ class ZMQThread(QtCore.QThread):
                 if poseinfo:
                     # Append poseinfo with current timestamp key into the cache.
                     timestamp = str(time.time())
-                    serialized_poseinfo = self.serialize_poseinfo(poseinfo)
-                    self.cached_poses[timestamp] = serialized_poseinfo
+                    self.cached_poses[timestamp] = serialize_poseinfo(poseinfo)
 
                     # Use the new optimized manager.
                     self.pg_manager.update_pose(self.sensor_name, poseinfo)
@@ -88,15 +87,7 @@ class ZMQThread(QtCore.QThread):
         self.quit()
         self.wait()
 
-    def serialize_poseinfo(self, poseinfo):
-        """
-        Serialize the poseinfo dictionary to a JSON-compatible format.
-        """
-        serialized_poseinfo = {}
-        for topic, pose in poseinfo.items():
-            serialized_poseinfo[topic] = [pose[0].tolist(), pose[1]]
 
-        return serialized_poseinfo
 
     def dump_cached_poses(self):
         """

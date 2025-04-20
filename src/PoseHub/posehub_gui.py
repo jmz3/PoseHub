@@ -4,21 +4,12 @@ from PyQt5 import QtCore, QtWidgets
 import pyqtgraph.opengl as gl
 from scipy.spatial.transform import Rotation as Rot
 from utils import load_instance_from_obj
-from utils import ZMQConfig
+from utils import ZMQConfig, NetworkConfig
 
 from posegraph_manager import PoseGraphManager
 from zmq_thread import ZMQThread
 from time import time
 
-
-class NetworkConfig:
-    def __init__(
-        self, ip="127.0.0.1", sub_port="5555", pub_port="5556", sensor_name="Camera"
-    ):
-        self.IP = ip
-        self.SUB_PORT = sub_port
-        self.PUB_PORT = pub_port
-        self.SENSOR_NAME = sensor_name
 
 
 class PoseGraphGUI(QtWidgets.QMainWindow):
@@ -49,7 +40,6 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         self.sensor_labels = {}
 
         self.initUI()
-        self.pose_graph_manager.pose_graph_updated.connect(self.on_pose_updated)
         self.last_time = time()
         self.current_time = time()
 
