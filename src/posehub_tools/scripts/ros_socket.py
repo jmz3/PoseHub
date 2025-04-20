@@ -13,8 +13,8 @@ ROS parameters (with default values) are used to configure the node:
       - The port number on which the ZeroMQ publisher will bind.
 
 Usage Example:
-  rosrun posehub_tools ros_socket.py _sensor_frame:=camera _object_frames:="[object_1, object_2]" _zmq_port:=5555
-  rosrun posehub_tools ros_socket.py _sensor_frame:=hololens _object_frames:="[object_1, object_2]" _zmq_port:=5556
+  rosrun posehub_tools ros_socket.py _sensor_frame:=Camera _object_frames:="[object_1, object_2, ref_1]" _zmq_port:=5555
+  rosrun posehub_tools ros_socket.py _sensor_frame:=HoloLens _object_frames:="[object_1, object_2, ref_1]" _zmq_port:=5557
 """
 
 import rospy

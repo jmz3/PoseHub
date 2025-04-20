@@ -16,10 +16,11 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
     def __init__(
         self,
         tool_names,
+        tool_obj_file_path,
         config: NetworkConfig,
         ref_frame="Hololens",
         parent=None,
-        filename="posegraph.json",
+        filename="posegraph_data",
     ):
         super().__init__(parent)
         self.setWindowTitle("PoseHub Visualization")
@@ -31,7 +32,7 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         self.pose_graph_manager = PoseGraphManager()
         self.pose_graph_manager.start()
         self.pose_graph_manager.pose_graph_updated.connect(self.on_pose_updated)
-        self.obj_file_path = "/home/jeremy/Research/PoseHub/ExpData/tinker.obj"
+        self.obj_file_path = tool_obj_file_path
         self.pose_graph_file = filename
         self.sensor_obj_generated = False
         self.sensor_names = []

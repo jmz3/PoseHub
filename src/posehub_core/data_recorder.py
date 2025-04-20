@@ -1,6 +1,6 @@
 import os
 import json
-from time import time
+import time
 import numpy as np
 from typing import Dict, Any
 
@@ -12,10 +12,10 @@ class DataRecorder:
         :param filename: Path to the JSON file where data will be stored.
         """
         self.data = dict([])
-        self.last_time = time()
+        self.last_time = time.time()
 
     def update(self, edges: Any, edges_opt: Any):
-        current_time = time()
+        current_time = time.time()
         # We assume that both edges and edges_opt follow the definition:
         # {parent_id: {child_id: [transformation, isActive]}}
         if current_time - self.last_time > 0.2:
@@ -51,7 +51,7 @@ class DataRecorder:
 
     def save(self, filename: str):
         # Prevent accidentally overwriting an existing file.
-        stamped_filename = filename + f"_{time.strftime('%Y%m%d_%H%M%S')}" + ".json"
+        stamped_filename = "data/scenegraph/" + filename + f"_{time.strftime('%Y%m%d_%H%M%S')}" + ".json"
 
         if os.path.exists(stamped_filename):
             raise FileExistsError(

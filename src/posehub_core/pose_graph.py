@@ -381,9 +381,6 @@ class PoseGraph:
                         ]
 
     def save_to_json(self, filename: str):
-        """
-        dummy implementaiton to save the data to a file
-        """
         self.data_recorder.save(filename)
 
 

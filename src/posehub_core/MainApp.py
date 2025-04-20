@@ -38,16 +38,17 @@ def main():
         }
     """
     )
-    # tool_names = ["object_1", "object_2", "ref_1"]
-    # config = NetworkConfig("127.0.0.1", "5555", "5556", "Camera")
+    tool_names = ["object_1", "object_2", "ref_1"]
+    config = NetworkConfig("127.0.0.1", "5555", "5556", "Camera")
 
-    tool_names = ["Probe", "StaticRef", "Anatomy"]
-    config = NetworkConfig("192.168.0.105", "5586", "5587", "Holo_1")
+    # tool_names = ["Probe", "StaticRef", "Anatomy"]
+    # config = NetworkConfig("192.168.0.105", "5586", "5587", "Holo_1")
     main_window = PoseGraphGUI(
         tool_names,
-        config,
+        tool_obj_file_path="src/PoseHub/resources/tinker.obj",
+        config = config,
         ref_frame="Camera",
-        filename="scenegraph_0411_quant_square_1",
+        filename="0411_quant_square_1",
     )
     main_window.show()
     sys.exit(app.exec_())

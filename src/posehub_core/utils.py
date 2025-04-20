@@ -190,7 +190,7 @@ def serialize_poseinfo(poseinfo):
     """
     serialized_poseinfo = {}
     for topic, pose in poseinfo.items():
-        serialized_poseinfo[topic] = [pose[0].tolist(), pose[1]]
+        serialized_poseinfo[topic] = [pose[0].tolist(), str(pose[1])]
 
     return serialized_poseinfo
 
