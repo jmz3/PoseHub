@@ -50,8 +50,15 @@ class DataRecorder:
         return new_edges
 
     def save(self, filename: str):
+
+        folder_name = "data/scenegraph"
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+
         # Prevent accidentally overwriting an existing file.
-        stamped_filename = "data/scenegraph/" + filename + f"_{time.strftime('%Y%m%d_%H%M%S')}" + ".json"
+        stamped_filename = os.path.join(
+            folder_name, f"{filename}_{time.strftime('%m%d_%H%M')}.json"
+        )
 
         if os.path.exists(stamped_filename):
             raise FileExistsError(

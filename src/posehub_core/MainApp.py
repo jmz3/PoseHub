@@ -45,7 +45,7 @@ def main():
     # config = NetworkConfig("192.168.0.105", "5586", "5587", "Holo_1")
     main_window = PoseGraphGUI(
         tool_names,
-        tool_obj_file_path="src/PoseHub/resources/tinker.obj",
+        tool_obj_file_path="src/posehub_core/resources/tinker.obj",
         config = config,
         ref_frame="Camera",
         filename="0411_quant_square_1",

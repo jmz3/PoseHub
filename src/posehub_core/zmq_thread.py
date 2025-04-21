@@ -98,7 +98,7 @@ class ZMQThread(QtCore.QThread):
             os.makedirs(folder_name)
         # Use current time as part of the filename to avoid overwriting previous dumps.
         filename = os.path.join(
-            folder_name, f"pose_record_{time.strftime('%Y%m%d_%H%M%S')}.json"
+            folder_name, f"pose_record_{time.strftime('%Y%m%d_%H%M')}.json"
         )
         try:
             with open(filename, "w") as f:

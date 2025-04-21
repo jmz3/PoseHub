@@ -1,5 +1,5 @@
 <h1 align="center">PoseHub</h1>
-<h4 align="center">A library for managing the spatial relationship for realtime object tracking task</h4>
+<h4 align="center">Multi-sensor fusion for realtime object tracking task in Augmented Reality</h4>
 
 <p align="center">
 <a href="https://www.python.org/"><img src='https://img.shields.io/badge/Made%20with-Python-1f425f.svg'></a>
@@ -41,60 +41,31 @@ But if you only want to use the core features of the package, no more ros instal
 The package is organized as follows:
 ```
 src
-├── PoseHub       # ros-free core implementation of the posehub
-├── posehub_ufk   # unscented kalman filter for pose estimation
+├── posehub_core  # ros-free core implementation of the posehub
 └── posehub_tools # synthetic data generator in ros for testing
 ```
 
 
-
-
 ## Usage
-Open a terminal and run the following command to start the ZMQ server.
-Note that you need to modify the IP address in the `posehub_main.py` file to the IP address of your sensor (either HoloLens or something else).
+Open the GUI by run the main program
 
 ```bash
-python3 posehub_main.py
+python3 MainApp.py
 ```
 
-If you have multiple sensors, you can copy the following code snippet and modify the args to create multiple communication objects.
-```python
-args_1 = argparse.Namespace(
-    sub_ip=args.sub_ip_1,
-    sub_port="5588",
-    pub_port="5589",
-    sub_topic=[tool_1_id, tool_2_id, tool_3_id],
-    pub_topic=[tool_1_id, tool_2_id, tool_3_id],
-    sensor_name=sensor_1_id,
-)  # args for h1 sensor
+The left side of the GUI shows the real time visualization of the tool/sensor frames.
+The right side shows the control panel, which allows the user to add as many sensors as needed.
 
-# create zmq manager
-zmq_manager_1 = ZMQManager(
-    sub_ip=args_1.sub_ip,
-    sub_port=args_1.sub_port,
-    pub_port=args_1.pub_port,
-    sub_topic=args_1.sub_topic,
-    pub_topic=args_1.pub_topic,
-    sensor_name=args_1.sensor_name,
-)
+<img src="docs/GUI.png" width="500"/>
 
-# initialize zmq manager
-zmq_manager_1.initialize() 
+The program by default loads a localhost config to the control panel. You can always change it to accomendate your sensor interface. 
 
-# create pose graph object to store the transformation
-pose_graph = PoseGraph()
-pose_graph.add_sensor("h1")
-```
-Since our communication objects are running in different threads, we need to join the threads by calling the terminate function when we want to exit the program.
-```python
-# join the threads
-zmq_manager_1.terminate()
+For example, if you have a sensor that is connected to a PC with `IP 172.0.1.100`. You need to first implement a ZMQ publisher to stream the tracked pose out through any available port, say `5555`. And then fill in the IP address `172.0.1.100` and  Subscriber Port `5555` into the text box on the control panel. The publisher port is for devices with Augmented Reality rendering capabilities. You can put in any available port if the counterparty is just a sensor. The recommended number here to be put for Publisher Port is `5556`, simply 5555+1. 
 
-```
+Once you have configured this sensor, click on `Add Connection` button to confirm and add the sensor into pose graph. 
 
-The graph can be visualized by calling the `vis_graph` function in the realtime (max 100Hz). Here is an example of the visualization of the graph. The red and green markers represent the frame is being tracked by different sensors. 
+If you have multiple sensors, you can repeat the step above to add them. Note that the publisher ports have to be unique, duplicated port number for different sensors will cause ZMQ to crash.
 
-<img src="docs/DemoPoseGraph.png" width="500"/>
 
 The synthetic data generator can create "real" frame motion and noise. To use the synthetic data generator, you can run the following command in the terminal.
 ```bash
@@ -148,3 +119,4 @@ The communication objects are running in different threads. They are created and
 The package is designed to be used in the [Surgical Tool Tracking using Multi-Sensor System](), the final project of [EN.601.654: Augmented Reality](https://fall2023.jhu-ar.yihao.one/). The contributors of this package are:
 * [Jiaming Zhang](https://github.com/jmz3)
 * [Hongchao Shu](https://github.com/Soooooda69)
+* [Mingxu Liu](https://github.com/JERRY-LIUMX)

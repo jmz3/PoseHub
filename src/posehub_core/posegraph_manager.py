@@ -1,5 +1,5 @@
 from PyQt5 import QtCore
-from pose_graph_optimize import PoseGraph
+from pose_graph import PoseGraph
 
 
 class PoseGraphManager(QtCore.QThread):
@@ -52,7 +52,7 @@ class PoseGraphManager(QtCore.QThread):
                 # Update the optimized pose graph.
                 self.pose_graph.update_graph(sensor_id, poseinfo)
                 # Emit the updated pose graph.
-                self.pose_graph_updated.emit(self.pose_graph)
+                self.pose_graph_updated.emit(self.pose_graph.edges_emit)
             else:
                 self.msleep(10)  # Sleep briefly if no updates are available.
 

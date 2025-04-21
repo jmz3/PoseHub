@@ -39,6 +39,7 @@ class PoseGraph:
         self.nodes = []
         self.edges = dict([])
         self.edges_opt = dict([])
+        self.edges_emit = dict([])
         self.sensor_id = []
         self.object_id = []
         self.transform_solver = TransformSolver(self.nodes, self.edges)
@@ -379,6 +380,30 @@ class PoseGraph:
                             np.identity(4),
                             False,
                         ]
+
+        def _strip_prefixes(d: Dict[str, any]) -> Dict[str, any]:
+            """
+            Recursively strip 'sensor_' and 'object_' prefixes from
+            all keys in this dict, preserving values (and recursing
+            into sub-dicts).
+            """
+            stripped = {}
+            for key, value in d.items():
+                # remove either prefix if present
+                new_key = key
+                for prefix in ("sensor_", "object_"):
+                    if new_key.startswith(prefix):
+                        new_key = new_key[len(prefix):]
+                        break
+
+                # recurse if this value is itself a dict
+                if isinstance(value, dict):
+                    stripped[new_key] = _strip_prefixes(value)
+                else:
+                    stripped[new_key] = value
+            return stripped
+
+        self.edges_emit = _strip_prefixes(deepcopy(self.edges_opt))
 
     def save_to_json(self, filename: str):
         self.data_recorder.save(filename)

@@ -3,7 +3,7 @@ import numpy as np
 from PyQt5 import QtCore, QtWidgets
 import pyqtgraph.opengl as gl
 from scipy.spatial.transform import Rotation as Rot
-from utils import load_instance_from_obj
+from utils import load_instance_from_obj, decompose_transform
 from utils import ZMQConfig, NetworkConfig
 
 from posegraph_manager import PoseGraphManager
@@ -136,8 +136,8 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
         if sensor_name not in self.sensor_names:
             self.sensor_names.append(sensor_name)
             frame_items = load_instance_from_obj(self.obj_file_path)
-            # for item in frame_items:
-            #     self.gl_view.addItem(item)
+            for item in frame_items:
+                self.gl_view.addItem(item)
             if not hasattr(self, "sensor_instance_data"):
                 self.sensor_instance_data = {}
             self.sensor_instance_data[sensor_name] = {
@@ -160,25 +160,20 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
             thread.start_tracking()
         print("Tracking started on all connections.")
 
-    def on_pose_updated(self, pose_graph):
+    def on_pose_updated(self, edges):
         # Update tool instances and their GLTextItems using the selected reference frame.
         for idx, tool in enumerate(self.tool_names):
-            transform = pose_graph.get_transform(
-                self.ref_frame, tool, solver_method="BFS"
-            )
+            # transform = pose_graph.get_transform(
+            #     self.ref_frame, tool, solver_method="BFS"
+            # )
+            transform, isActive = edges[self.ref_frame].get(tool, None)
             if transform is None:
                 continue
-            t = transform[:3, 3]
-            R_mat = transform[:3, :3]
-            rot = Rot.from_matrix(R_mat)
-            rotvec = rot.as_rotvec()
-            angle_rad = np.linalg.norm(rotvec)
-            angle_deg = np.degrees(angle_rad)
-            axis = (
-                (rotvec / angle_rad)
-                if angle_rad > 1e-6
-                else np.array([0, 1, 0], dtype=np.float32)
-            )
+            if np.linalg.det(transform) == 1:
+                continue
+
+            t, angle_deg, axis = decompose_transform(transform)
+
             for item in self.tool_instance_data[idx]["items"]:
                 item.resetTransform()
                 if angle_deg > 1e-3:
@@ -192,23 +187,15 @@ class PoseGraphGUI(QtWidgets.QMainWindow):
 
         # Update sensor instances and their GLTextItems.
         for sensor in self.sensor_names:
-            transform = pose_graph.get_transform(
-                sensor, self.ref_frame, solver_method="BFS"
-            )
-            if transform is None:
+            # transform = pose_graph.get_transform(
+            #     sensor, self.ref_frame, solver_method="BFS"
+            # )
+            transform = edges[self.ref_frame].get(sensor, None)
+            if transform is None or transform == np.eye(4):
                 continue
-            transform = np.linalg.inv(transform)
-            t = transform[:3, 3]
-            R_mat = transform[:3, :3]
-            rot = Rot.from_matrix(R_mat)
-            rotvec = rot.as_rotvec()
-            angle_rad = np.linalg.norm(rotvec)
-            angle_deg = np.degrees(angle_rad)
-            axis = (
-                (rotvec / angle_rad)
-                if angle_rad > 1e-6
-                else np.array([0, 1, 0], dtype=np.float32)
-            )
+
+            t, angle_deg, axis = decompose_transform(transform)
+
             sensor_data = self.sensor_instance_data.get(sensor, None)
             if sensor_data is not None:
                 for sensor_item in sensor_data["items"]:

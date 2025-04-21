@@ -5,6 +5,7 @@ import sys
 import pyqtgraph.opengl as gl
 
 
+
 def hat(omega):
     """Return the hat operator of a 3-vector."""
     return np.array(
@@ -193,6 +194,23 @@ def serialize_poseinfo(poseinfo):
         serialized_poseinfo[topic] = [pose[0].tolist(), str(pose[1])]
 
     return serialized_poseinfo
+
+
+def decompose_transform(T):
+    """
+    Decompose a 4x4 transformation matrix into rotation and translation components.
+    """
+    t = T[:3, 3]
+    rot = R.from_matrix(T[:3, :3])
+    rotvec = rot.as_rotvec()
+    angle_rad = np.linalg.norm(rotvec)
+    angle_deg = np.degrees(angle_rad)
+    axis = (
+        (rotvec / angle_rad)
+        if angle_rad > 1e-6
+        else np.array([0, 1, 0], dtype=np.float32)
+    )
+    return t, angle_deg, axis
 
 
 class ZMQConfig:
